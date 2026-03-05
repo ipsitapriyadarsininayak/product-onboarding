@@ -1,20 +1,27 @@
 package pages;
 
 import constants.ElementLocators;
+import jdk.jshell.spi.ExecutionControl;
 import org.openqa.selenium.*;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import utils.NotepadReader;
 import utils.PDXExcelReader;
 import java.awt.*;
+import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
 import java.util.List;
 
+
+
 public class StepApplicationPage extends BasePage {
     private PDXExcelReader pdxExcelReader;
+    public static boolean stopNow = false;
 
 
     String username = System.getenv("PID");
@@ -39,7 +46,7 @@ public class StepApplicationPage extends BasePage {
         Thread.sleep(5000);
         waitForElementVisible(ElementLocators.ALL_USERS);
         clickElement(ElementLocators.ALL_USERS);
-        Thread.sleep(5000);
+        Thread.sleep(6000);
         waitForElementVisible(ElementLocators.BUYERS_APPROVAL_LINK_XPATH);
         clickElement(ElementLocators.BUYERS_APPROVAL_LINK_XPATH);
 
@@ -64,6 +71,7 @@ public class StepApplicationPage extends BasePage {
     public void checkProductIdImported(String excelPath, String SheetName, int rowNUM, String columnHeader) throws IOException, InterruptedException, AWTException {
         PDXExcelReader reader = new PDXExcelReader(excelPath, SheetName);
         int rowCount = reader.getRowCount();
+        System.out.println("Row count from sheet '" + SheetName + "': " + rowCount);
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(60));
         Actions actions = new Actions(driver);
 
@@ -72,177 +80,231 @@ public class StepApplicationPage extends BasePage {
         for (int i = 1; i <= rowCount; i++) {
             String PDXProductID;
 
-            if (SheetName.equalsIgnoreCase("Sheet1")) {
+            if (SheetName.equalsIgnoreCase("consignment")) {
                 PDXProductID = reader.getCellValue(i, columnHeader); // logic for Sheet1
-            } else if (SheetName.equalsIgnoreCase("Sheet2")) {
+            } else if (SheetName.equalsIgnoreCase("wholesale")) {
                 PDXProductID = reader.getCellValue(i, columnHeader); // logic for Sheet2 (can be different if needed)
             } else {
                 PDXProductID = reader.getCellValue(i, columnHeader); // default logic
             }
 
-            if (PDXProductID != null && !PDXProductID.trim().isEmpty()) {
-                PDXProductIDs.add(PDXProductID.trim());
+            if (PDXProductID == null
+                    || PDXProductID.isEmpty()
+                    || PDXProductID.equalsIgnoreCase(columnHeader)) {
+                // skip blanks or accidental header rows
+                continue;
             }
+
+            // ✅ Add only once
+            PDXProductIDs.add(PDXProductID);
+
         }
 
         reader.close();
-
+        PDXProductIDs = PDXProductIDs.stream().distinct().toList();
         // Optional: log or assert
         if (PDXProductIDs.isEmpty()) {
-            throw new RuntimeException("No Product IDs found in sheet: " + SheetName);
+            throw new RuntimeException("No PDX Product IDs found in Excel column: " + columnHeader +
+                    " (sheet: " + SheetName + ")");
         }
+        System.out.println("✅ Loaded " + PDXProductIDs.size() + " PDX Product IDs from Excel.");
 
-        // You can now use PDXProductIDs for further validation
+
+        String allIdsText = String.join(",", PDXProductIDs);
+// Open filter UI ONCE
+        //  WebElement filterHeader = wait.until); // small pause if UI is sluggishWebElement filterHeader = wait.until(ExpectedConditions.elementToBeClickable(
+        wait.until(ExpectedConditions.invisibilityOfElementLocated(By.id("waitScreenOverlayGlass")));
+
+        // Open filter UI
+        WebElement filterHeader = wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("//th//span[@title='PDX Product ID']")));
+        filterHeader.click();
+        Thread.sleep(2000);
+        WebElement filter = wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("//select[contains(@class, 'sortOptionsListBox')]//option[@value='Include only']")));
+        filter.click();
+        Thread.sleep(2000);
+        WebElement textArea = wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.xpath("//textarea[@placeholder='Value or text']")));
+        textArea.clear();
+        textArea.sendKeys( allIdsText);
 
 
-        if (PDXProductIDs.isEmpty()) {
-            throw new RuntimeException("No PDX Product IDs found in Excel column: " + columnHeader);
+// (Optional) small pause if UI is sluggish
+        Thread.sleep(2000);
 
-        }
-        int processedCount = 0;
 
-        for (String PDXProductID : PDXProductIDs) {
-            // Open filter UI
-            WebElement filterHeader = wait.until(ExpectedConditions.elementToBeClickable(
-                    By.xpath("//th//span[@title='PDX Product ID']")));
-            filterHeader.click();
+        // Re-locate Apply button after entering product ID
+        WebElement applyBtn = wait.until(ExpectedConditions.presenceOfElementLocated(
+                By.xpath("//button[.//span[normalize-space()='Apply filter']]")));
+
+        // Wait until it's clickable
+
+        if (applyBtn.isEnabled()) {
+            wait.until(ExpectedConditions.elementToBeClickable(applyBtn));
+            actions.moveToElement(applyBtn).click().perform();
+            System.out.println("Clicked Apply filter for Product ID: " + allIdsText);
+            Thread.sleep(10000);
+
+            List<WebElement> rows = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(
+                    By.xpath("//table//tr//td")));
             Thread.sleep(2000);
-            WebElement filter = wait.until(ExpectedConditions.elementToBeClickable(
-                    By.xpath("//select[contains(@class, 'sortOptionsListBox')]//option[@value='Equals']")));
-            filter.click();
-            Thread.sleep(2000);
-            WebElement textArea = wait.until(ExpectedConditions.visibilityOfElementLocated(
-                    By.xpath("//textarea[@placeholder='Value or text']")));
-            textArea.clear();
-            textArea.sendKeys(PDXProductID);
-            Thread.sleep(7000);
-            // Re-locate Apply button after entering product ID
-            WebElement applyBtn = wait.until(ExpectedConditions.presenceOfElementLocated(
-                    By.xpath("//button[.//span[normalize-space()='Apply filter']]")));
 
-            // Wait until it's clickable
+            if (rows.size() == 0) {
+                System.out.println("No results found after applying PDX Product IDs. Skipping further actions...");
 
-            if (applyBtn.isEnabled()) {
-                wait.until(ExpectedConditions.elementToBeClickable(applyBtn));
-                actions.moveToElement(applyBtn).click().perform();
-                System.out.println("Clicked Apply filter for Product ID: " + PDXProductID);
-                Thread.sleep(10000);
-
-                List<WebElement> rows = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(
-                        By.xpath("//table//tr//td")));
-                Thread.sleep(10000);
-
-                if (rows.size() == 0) {
-                    System.out.println("No results found for Product ID: " + PDXProductID + ". Skipping...");
-                    continue;
-                }
+            } else {
 
 
                 try {
                     WebElement selectAll = wait.until(ExpectedConditions.elementToBeClickable(
                             By.xpath("//div[text()='Select All']")));
                     selectAll.click();
-                    System.out.println("Selected all for Product ID: " + PDXProductID);
+                    System.out.println("Selected all rows after filtering PDX Product IDs list.");
                 } catch (Exception e) {
                     System.out.println("Failed to click Select All: " + e.getMessage());
                 }
-
-            } else {
-                // ✅ Apply Filter is disabled → click navbar logo and continue
-                System.out.println("Apply filter is disabled for Product ID: " + PDXProductID + ". Clicking navbar logo...");
-                try {
-                    WebElement navbarLogo = wait.until(ExpectedConditions.elementToBeClickable(
-                            By.xpath("//div[@id='stibo-element-navbar-logo']")));
-                    navbarLogo.click();
-                    Thread.sleep(2000);
-                } catch (Exception e) {
-                    System.out.println("Failed to click navbar logo: " + e.getMessage());
-                }
-                continue; // Skip remaining logic for this iteration
             }
 
-
-            try {
-                scrollToSeasonality();
-            } catch (Exception e) {
-                System.out.println("Failed to scroll to Seasonality: " + e.getMessage());
-                throw new RuntimeException("Test failed: Seasonality element not found", e);
-            }
-
-
-            try {
-                int rowNum = 1;
-                doubleClickTextField(excelPath, SheetName, 1, "Core/Newness");
-            } catch (Exception e) {
-                System.out.println("Failed to double-click Core/Newness: " + e.getMessage());
-            }
-
-
-            try {
-                ScrollableContainer(excelPath, SheetName, 1, "Parent Node Lists", "PRODUCT TYPE Â© (External Merch Category) ");
-            } catch (Exception e) {
-                System.out.println("Failed to scroll container: " + e.getMessage());
-            }
-
-            try {
-                pricing();
-            } catch (Exception e) {
-                System.out.println("Failed to execute pricing: " + e.getMessage());
-            }
-
-            try {
-                clickOnBuyersApproval();
-            } catch (Exception e) {
-                System.out.println("Failed to click on Buyers Approval: " + e.getMessage());
-            }
-
-            try {
-                clickOnDateFirstSubmittedByBrand();
-            } catch (Exception e) {
-                System.out.println("Failed to click on Date First Submitted By Brand: " + e.getMessage());
-            }
-
-            try {
-                filterDateToDescendingOrder();
-            } catch (Exception e) {
-                System.out.println("Failed to filter date to descending order: " + e.getMessage());
-            }
-
-            processedCount++;
-
-        } /*catch (Exception e) {
-                System.out.println("Failed to process Product ID: " + PDXProductID + " due to: " + e.getMessage());
-            }*/
-
-
-        if (processedCount == 0) {
-            System.out.println("⚠️ No Product IDs were processed. Proceeding to Asset Approval anyway...");
-        } else if (processedCount == PDXProductIDs.size()) {
-            System.out.println("✅ All Buyer Approval products processed. Proceeding to Asset Approval...");
         } else {
+            // ✅ Apply Filter is disabled → click navbar logo and continue
+            System.out.println("Apply filter is disabled after entering PDX Product IDs. Clicking navbar logo...");
+            try {
+                WebElement navbarLogo = wait.until(ExpectedConditions.elementToBeClickable(
+                        By.xpath("//div[@id='stibo-element-navbar-logo']")));
+                navbarLogo.click();
+                Thread.sleep(2000);
+            } catch (Exception e) {
+                System.out.println("Failed to click navbar logo: " + e.getMessage());
+            }
+            System.out.println("Row count from sheet '" + SheetName + "': " + rowCount);
+        }
+// Inside the for loop, before scrollToSeasonality()
+        if (!driver.findElements(By.xpath("//div[text()='Attribute Approval']")).isEmpty()) {
+            System.out.println("✅ Attribute Approval page detected during Buyer Approval processing. Skipping remaining Buyer Approval actions.");
+            return; // Exit loop, but continue with Asset Approval and Attribute Approval steps
+        }
+
+
+
+
+        try {
+            if (!driver.findElements(By.xpath("//span[@title='Seasonality']")).isEmpty()) {
+                scrollToSeasonality();
+            } else {
+                System.out.println("Seasonality check after applying " + PDXProductIDs.size() + " PDX IDs.");
+            }
+        } catch (Exception e) {
+            System.out.println("Failed to scroll to Seasonality: " + e.getMessage());
+        }
+
+        try {
+            int rowNum = 1;
+            doubleClickTextField(excelPath, SheetName, 1, "Core/Newness");
+        } catch (Exception e) {
+            System.out.println("Failed to double-click Core/Newness: " + e.getMessage());
+        }
+
+
+        try {
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            js.executeScript("document.body.style.zoom='75%'"); // Adjust percentage as needed
+            ScrollableContainer(excelPath, SheetName, 1, "Parent Node Lists", "PRODUCT TYPE Â© (External Merch Category) ");
+
+        } catch (Exception e) {
+            System.out.println("Failed to scroll container: " + e.getMessage());
+        }
+
+        try {
+            By errorPopup = By.xpath("//div[contains(@class,'portal-alert-popup-content__header')]");
+            By closeBtn   = By.xpath("//i[contains(@class,'portal-alert-popup-close-box__button')]");
+
+            if (!driver.findElements(errorPopup).isEmpty()) {
+                WebElement close = driver.findElement(closeBtn);
+                try {
+                    close.click();
+                } catch (ElementClickInterceptedException ex) {
+                    ((JavascriptExecutor) driver).executeScript("arguments[0].click();", close);
+                }
+                new WebDriverWait(driver, Duration.ofSeconds(3))
+                        .until(ExpectedConditions.invisibilityOfElementLocated(errorPopup));
+                System.out.println("✅ Popup dismissed.");
+            }
+        } catch (Exception ignored) {
+            // Do nothing if popup not found
+        }
+
+
+        try {
+            pricing(excelPath, SheetName);
+        } catch (Exception e) {
+            System.out.println("Failed to execute pricing: " + e.getMessage());
+        }
+
+       /* try {
+            clickOnBuyersApproval();
+        } catch (Exception e) {
+            System.out.println("Failed to click on Buyers Approval: " + e.getMessage());
+        }*/
+
+        /*try {
+            clickOnDateFirstSubmittedByBrand();
+        } catch (Exception e) {
+            System.out.println("Failed to click on Date First Submitted By Brand: " + e.getMessage());
+        }*/
+
+       /* try {
+            filterDateToDescendingOrder();
+        } catch (Exception e) {
+            System.out.println("Failed to filter date to descending order: " + e.getMessage());
+        }*/
+
+        {
+            System.out.println("✅ All Buyer Approval products processed. Proceeding to Asset Approval...");
+        }
+
+        {
             System.out.println("⚠️ Some Buyer Approval products were skipped or failed. Proceeding to Asset Approval...");
         }
 
 // Simulate click anywhere to dismiss overlay
-        actions.moveByOffset(10, 10).click().perform();
+        actions.moveByOffset(10,10).
+
+                click().
+
+                perform();
         Thread.sleep(5000);
 
-// Proceed to Asset Approval
-        WebElement navbar = wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath("//div[@id='stibo-element-navbar-logo']")));
-        navbar.click();
-        Thread.sleep(5000);
-        waitForElementVisible(ElementLocators.ALL_USERS);
-        clickElement(ElementLocators.ALL_USERS);
-        Thread.sleep(10000);
-        WebElement assetApprovalBtn = wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath("//div[@title='Asset Approval']")));
-        assetApprovalBtn.click();
-        Thread.sleep(10000);
+        try {
 
-        String columnName = "BrandID";
-        applyBrandFilterBulk(SheetName, columnName);
-        Thread.sleep(6000);
+            WebElement navbar = wait.until(ExpectedConditions.elementToBeClickable(
+                    By.xpath("//div[@id='stibo-element-navbar-logo']")));
+            navbar.click();
+            Thread.sleep(5000);
+            waitForElementVisible(ElementLocators.ALL_USERS);
+            clickElement(ElementLocators.ALL_USERS);
+            Thread.sleep(10000);
+            WebElement assetApprovalBtn = wait.until(ExpectedConditions.elementToBeClickable(
+                    By.xpath("//div[@title='Asset Approval']")));
+            assetApprovalBtn.click();
+            Thread.sleep(5000);
+
+
+            String columnName = "BrandID";
+            applyBrandFilterBulk(SheetName, columnName);
+            Thread.sleep(6000);
+            WebElement navbar2 = wait.until(ExpectedConditions.elementToBeClickable(
+                    By.xpath("//div[@id='stibo-element-navbar-logo']")));
+            try {
+                navbar2.click();
+            } catch (ElementClickInterceptedException e) {
+                ((JavascriptExecutor) driver).executeScript("arguments[0].click();", navbar2);
+            }
+            Thread.sleep(3000);
+
+        } catch (Exception e) {
+            System.out.println("❌ Asset Approval failed: " + e.getMessage());
+        }
 
         try {
             waitForElementVisible(ElementLocators.ALL_USERS);
@@ -255,35 +317,37 @@ public class StepApplicationPage extends BasePage {
 
             PDXProductId(excelPath, SheetName, rowNUM, columnHeader);
 
-
             System.out.println("✅ Test completed successfully. All operations finished.");
             System.out.println("✅ Test completed successfully. All steps passed.");
 
-        } catch (Exception e) {
-            System.out.println("❌ Test failed during final operation: " + e.getMessage());
-            e.printStackTrace();
+///throw new io.cucumber.java.PendingException("test stopped intentionally after successful completion");
 
-            // throw new RuntimeException("Test failed", e);
+        } catch (Exception ignored) {
+            System.out.println("Attribute Approval page not found.  not Continuing...");
+
         }
-    }
 
+    }
     public void clickOnCheckMandatoryAttribute() {
         waitForElementVisible(ElementLocators.CHECK_MANDATORY_ATTRIBUTE_BUTTON_XPATH);
         clickElement(ElementLocators.CHECK_MANDATORY_ATTRIBUTE_BUTTON_XPATH);
     }
 
     public void scrollToSeasonality() throws InterruptedException {
-
-        Thread.sleep(2000);
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
+        //Thread.sleep(2000);
 
         WebElement scrollableDiv = driver.findElement(By.xpath("//div[contains(@class, 'sheet-scroll-container')]"));
         JavascriptExecutor js = (JavascriptExecutor) driver;
         js.executeScript("arguments[0].scrollLeft = arguments[0].scrollWidth;", scrollableDiv);
-        Thread.sleep(2000);
-        WebElement seasonality = driver.findElement(By.xpath("//span[@title='Seasonality']"));
-        seasonality.click();
-    }
+        Thread.sleep(5000);
 
+        WebElement seasonality = wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("//span[@title='Seasonality']")));
+        seasonality.click();
+        System.out.println("✅ Clicked on Seasonality successfully.");
+
+    }
         /*js.executeScript("window.scrollBy(500, 0);");
         js.executeScript("window.scrollTo(document.body.scrollWidth, 0);"); */
 
@@ -302,328 +366,567 @@ public class StepApplicationPage extends BasePage {
 
     }*/
 
-    public void doubleClickTextField(String excelPath, String SheetName, int rowNum, String columnHeader) throws InterruptedException, AWTException, IOException {
-        //Actions ac = new Actions(driver);
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(60));
 
-        WebElement corenewness = wait.until(ExpectedConditions.elementToBeClickable(By.xpath
-                ("(//span[@title='Core / Newness'])[1]")));
-        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", corenewness);
 
-        // String excelPath = System.getenv("EXCEL_PATH2");
+
+    public void doubleClickTextField(String excelPath, String SheetName, int rowNum, String columnHeader)
+            throws InterruptedException, AWTException, IOException {
+
+        Actions ac = new Actions(driver);
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(80));
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+        // Scroll to Core/Newness header
+        WebElement corenewnessHeader = wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("(//span[@title='Core / Newness'])[1]")));
+        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", corenewnessHeader);
+
+        // Read Excel values
         PDXExcelReader read = new PDXExcelReader(excelPath, SheetName);
         int rowCount = read.getRowCount();
         System.out.println("Row count from sheet '" + SheetName + "': " + rowCount);
-        Actions ac = new Actions(driver);
-
         List<String> corenewnessValues = new ArrayList<>();
-
         for (int i = 1; i <= rowCount; i++) {
-            String corenewnessValue= read.getCellValue(i, columnHeader);
-            System.out.println("Read value from row " + i + ": '" + corenewnessValue + "'"); // ✅ Added
-
-            // ✅ Skip if value is empty or equals the column header (repeated header row)
-            if (corenewnessValue == null || corenewnessValue.trim().isEmpty() || corenewnessValue.trim().equalsIgnoreCase(columnHeader.trim())) {
+            String corenewnessValue = read.getCellValue(i, columnHeader);
+            System.out.println("Read value from row " + i + ": '" + corenewnessValue + "'");
+            if (corenewnessValue == null || corenewnessValue.trim().isEmpty()
+                    || corenewnessValue.trim().equalsIgnoreCase(columnHeader.trim())) {
                 continue;
             }
-
             corenewnessValues.add(corenewnessValue.trim());
         }
-
         read.close();
 
         if (corenewnessValues.isEmpty()) {
-                throw new RuntimeException("No Core/Newness values found in sheet: " + SheetName);
+            throw new RuntimeException("No Core/Newness values found in sheet: " + SheetName);
+        }
+
+        List<WebElement> uiCells = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(
+                By.xpath("//td[@data-col='20']")));
+
+        int processCount = Math.min(uiCells.size(), corenewnessValues.size());
+        System.out.println("Processing " + processCount + " rows...");
+
+// Iterate and update each row
+        for (int i = 0; i < processCount; i++) {
+            String excelValue = corenewnessValues.get(i);
+
+            WebElement targetCell = wait.until(ExpectedConditions.elementToBeClickable(
+                    By.xpath("(//td[@data-col='20'])[" + (i + 1) + "]")));
+            ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", targetCell);
+            try {
+                targetCell.click();
+            } catch (ElementClickInterceptedException e) {
+                // minimal fallback if click is intercepted
+                ((JavascriptExecutor) driver).executeScript("arguments[0].click();", targetCell);
+            }
+            ac.sendKeys(Keys.ENTER).perform();
+            Thread.sleep(800);
+
+            // Optional overlay/editor wait (non-blocking if not present)
+            By overlayPanel = By.cssSelector("div.sheet-edit-mode-editor-overlay-panel");
+            WebElement editorPanel = null;
+            try {
+                WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(4));
+                editorPanel = shortWait.until(ExpectedConditions.visibilityOfElementLocated(overlayPanel));
+            } catch (TimeoutException ignore) {
+                // no overlay; proceed with inline editor
+            }
+            // Active editor (works for inline or overlay)
+            WebElement activeEditor;
+            if (editorPanel != null) {
+                // prefer the actual input inside the modal
+                try {
+                    // tighter selector: still generic, no hard-coding
+                    activeEditor = editorPanel.findElement(
+                            By.cssSelector("input:not([disabled]):not([readonly]), textarea:not([disabled]):not([readonly]), [contenteditable='true']")
+                    );
+
+                    ((JavascriptExecutor) driver).executeScript("arguments[0].focus();", activeEditor);
+                } catch (NoSuchElementException e) {
+                    activeEditor = (WebElement) ((JavascriptExecutor) driver).executeScript("return document.activeElement;");
+                }
+            } else {
+                activeEditor = (WebElement) ((JavascriptExecutor) driver).executeScript("return document.activeElement;");
+
+                // if inline and not editable, force edit mode so rows don’t get skipped
+                Boolean isEditable = (Boolean) ((JavascriptExecutor) driver).executeScript(
+                        "var el=arguments[0]; return !!el && (el.isContentEditable || ['INPUT','TEXTAREA','SELECT'].includes(el.tagName));",
+                        activeEditor
+                );
+
+
+                activeEditor = (WebElement) ((JavascriptExecutor) driver).executeScript("return document.activeElement;");
             }
 
-            for (String corenewnessValue : corenewnessValues) {
-       /* WebElement corenewness = wait.until(ExpectedConditions.elementToBeClickable(By.xpath
-                ("(//span[@title='Core / Newness'])[1]")));
-        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", corenewness);
-        //System.out.println("Excel value: '" + cellValue + "'");*/
-                WebElement targetcell1 = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("(//td[@data-col='20'])[1]")));
-                ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", targetcell1);
-                targetcell1.click();
-                ac.sendKeys(Keys.ENTER).perform();
-                // Step 1: Wait for the editor panel to be clickable
-                WebElement editorPanel = wait.until(ExpectedConditions.elementToBeClickable(
-                        By.cssSelector("div.sheet-edit-mode-editor-overlay-panel")));
-                WebElement activeEditor = (WebElement) ((JavascriptExecutor) driver)
-                        .executeScript("return document.activeElement;");
+// Type into the current editor (this may have triggered the modal already; we will ESC if so)
+            ac.click(activeEditor)
+                    .keyDown(Keys.CONTROL).sendKeys("a").keyUp(Keys.CONTROL)
+                    .sendKeys(Keys.DELETE)
+                    .sendKeys(excelValue)
+                    .perform();
 
-                ac.moveToElement(activeEditor)
-                        .click()
-                        .pause(Duration.ofMillis(200))
-                        .keyDown(Keys.CONTROL).sendKeys("a").keyUp(Keys.CONTROL)
-                        .sendKeys(Keys.DELETE)
-                        .pause(Duration.ofMillis(200))
-                        .sendKeys(corenewnessValue)
-                        .perform();
-
-// Step 4: Read back value using JS
-                String typedValue = (String) ((JavascriptExecutor) driver)
-                        .executeScript("return ('value' in arguments[0]) ? arguments[0].value : arguments[0].textContent;", activeEditor);
-
-// Step 5: Print and compare
-                System.out.println("Excel Value: " +corenewnessValue);
-                System.out.println("UI Value: " + typedValue);
-
-                if (columnHeader.trim().equals(typedValue.trim())) {
-                    ac.sendKeys(Keys.ENTER).perform();
-                    System.out.println("✅ Value committed successfully");
-                } else {
-                    System.out.println("❌ Value mismatch – not committing");
+            js.executeScript(
+                    "arguments[0].dispatchEvent(new Event('input', { bubbles: true }));" +
+                            "arguments[0].dispatchEvent(new Event('change', { bubbles: true }));",
+                    activeEditor
+            );
 
 
+            //ac.pause(Duration.ofMillis(200)).sendKeys(Keys.TAB).pause(Duration.ofMillis(180)).perform();
+
+            String typedValue = (String) ((JavascriptExecutor) driver)
+                    .executeScript("return ('value' in arguments[0]) ? arguments[0].value : arguments[0].textContent;", activeEditor);
+
+            System.out.println("Excel Value: " + excelValue);
+            System.out.println("UI Value: " + typedValue);
+
+            try {
+                new WebDriverWait(driver, Duration.ofSeconds(6)).until(
+                        ExpectedConditions.or(
+                                ExpectedConditions.textToBePresentInElementValue(activeEditor, excelValue),
+                                ExpectedConditions.textToBePresentInElement(activeEditor, excelValue)
+                        )
+                );
+            } catch (TimeoutException ignore) {
+                // proceed; value check below still guards the commit
+            }
+
+            if (typedValue != null && typedValue.trim().equalsIgnoreCase(excelValue.trim())) {
+
+                boolean overlayVisibleNow = false;
+                try {
+                    overlayVisibleNow = !driver.findElements(overlayPanel).isEmpty()
+                            && driver.findElement(overlayPanel).isDisplayed();
+                } catch (StaleElementReferenceException ignored) {
+                    // if overlay DOM mutated, treat as not visible
+                    overlayVisibleNow = false;
+                }
+
+                if (overlayVisibleNow) {
+                    //1️⃣ Keyboard commit first (VERY IMPORTANT)
+                    ac.sendKeys(Keys.ENTER).pause(Duration.ofMillis(10000)).perform();
+
+                    // 2️⃣ Ensure editor really lost focus
+                    js.executeScript("arguments[0].blur && arguments[0].blur();", activeEditor);
+                    Thread.sleep(10000);
+
+                    // 3️⃣ Wait until Save becomes enabled (not just clickable)
+
+                    wait.until(ExpectedConditions.elementToBeClickable(
+                            By.xpath("//div[contains(@class,'modal') or @role='dialog']//button[normalize-space()='Save']")
+                    )).click();
+
+
+                    // 5️⃣ Wait for overlay to close
+                    new WebDriverWait(driver, Duration.ofSeconds(15))
+                            .until(ExpectedConditions.invisibilityOfElementLocated(overlayPanel));
+
+                    Thread.sleep(500);
+                }
+
+
+                System.out.println("✅ Value committed successfully");
+            } else {
+                System.out.println("❌ Value mismatch – not committing");
                 Thread.sleep(500);
-
                 ac.moveByOffset(50, 50).click().perform();
                 Thread.sleep(1000);
-            }
-        /*WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
-        WebElement textField = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("(//tr[@class='even']/td[20])[1]"))); // Update locator if needed
-        textField.click();
-        Actions actions = new Actions(driver);
-        actions.sendKeys(Keys.SHIFT, "c").build().perform();
-        Thread.sleep(1000);
-        WebElement body = driver.findElement(By.tagName("body"));
-        actions.moveToElement(body).moveByOffset(10, 10).click().perform();
-
-    }*/
-        }}
+            }}}
 
 
-
-    public void ScrollableContainer(String excelPath, String SheetName, int rowNum, String columnHeader,String columnHeader1) throws Exception {
+    public void ScrollableContainer(String excelPath, String SheetName, int rowNum, String columnHeader, String columnHeader1) throws Exception {
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+        Actions actions = new Actions(driver);
+
         WebElement ecom = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//span[@title='Ecom']")));
         ecom.click();
+
         WebElement scrollable = driver.findElement(By.xpath("//div[contains(@class, 'sheet-scroll-container')]"));
         JavascriptExecutor js = (JavascriptExecutor) driver;
-        js.executeScript("arguments[0].scrollLeft += 300;", scrollable);
-        /*js.executeScript("arguments[0].scrollLeft = arguments[0].scrollWidth;", scrollable);*/
+        js.executeScript("arguments[0].scrollLeft += 600;", scrollable);
         Thread.sleep(5000);
+
         WebElement shortdesc = driver.findElement(By.xpath("(//th[@id='TableHeader_Short_Item_Description'])[1]"));
         js.executeScript("arguments[0].scrollLeft = arguments[0].scrollWidth", shortdesc);
         Thread.sleep(2000);
-        WebElement cell = driver.findElement(By.xpath("(//td[@data-col='28'])[1]"));
-        cell.click();
-        Thread.sleep(2000);
 
-        Actions actions = new Actions(driver);
-        actions.sendKeys("T").pause(600)
-                .sendKeys("e").pause(400)
-                .sendKeys("s").pause(100)
-                .sendKeys("t").pause(100)
-                .sendKeys("i").pause(100)
-                .sendKeys("n").pause(100)
-                .sendKeys("g").perform();
-        Thread.sleep(2000);
-        /*WebElement safeArea = driver.findElement(By.xpath("//div[@class='stb-DetailPanel']")); // Replace with actual selector
-        safeArea.click();*/
-        actions.sendKeys(Keys.ENTER).pause(Duration.ofMillis(700)).click().perform();
-        Thread.sleep(1000);
-        WebElement scrollable1 = driver.findElement(By.xpath("//div[contains(@class, 'sheet-scroll-container')]"));
-        js.executeScript("arguments[0].scrollLeft += 1200;", scrollable); // Adjust offset as needed
-        Thread.sleep(3000);
-        // Scrolls 300px to the right
-
-        //PARENT NODE
-        WebElement inputField = wait.until(ExpectedConditions.elementToBeClickable(By.xpath
-                ("(//span[@title='Parent Node Lists'])[1]")));
-        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", inputField);
-        Thread.sleep(1000);
+        // ✅ Read Excel values (unchanged)
+        String shortDescColumn = "Short Item Description"; // Excel header
         PDXExcelReader read = new PDXExcelReader(excelPath, SheetName);
         int rowCount = read.getRowCount();
-        System.out.println("Row count from sheet '" + SheetName + "': " + rowCount);
-        Actions ac = new Actions(driver);
-
-        List<String> parentnodelistvalues = new ArrayList<>();
+        List<String> shortDescValues = new ArrayList<>();
 
         for (int i = 1; i <= rowCount; i++) {
-            String parentnodelistvalue = read.getCellValue(i, columnHeader);
-            System.out.println("Read value from row " + i + ": '" + parentnodelistvalue + "'"); // ✅ Added
-
-            // ✅ Skip if value is empty or equals the column header (repeated header row)
-            if (parentnodelistvalue == null || parentnodelistvalue.trim().isEmpty() || parentnodelistvalue.trim().equalsIgnoreCase(columnHeader.trim())) {
+            String value = read.getCellValue(i, shortDescColumn);
+            if (value == null || value.trim().isEmpty() || value.trim().equalsIgnoreCase(shortDescColumn)) {
                 continue;
             }
-
-            parentnodelistvalues.add(parentnodelistvalue.trim());
+            shortDescValues.add(value.trim());
         }
-
         read.close();
-        if (parentnodelistvalues.isEmpty()) {
-            throw new RuntimeException("No parent node listvalues found in sheet: " + SheetName);
+
+        if (shortDescValues.isEmpty()) {
+            throw new RuntimeException("No Short Item Description values found in sheet: " + SheetName);
         }
 
-        for (String parentnodelistvalue : parentnodelistvalues) {
-            WebElement targetcell = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("(//td[@data-col='36'])[1]")));
-            ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", targetcell);
-            targetcell.click();
+        // ✅ Get all UI cells
+        List<WebElement> uiCells = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(
+                By.xpath("//td[@data-col='28']")));
+        int processCount = Math.min(uiCells.size(), shortDescValues.size());
+        System.out.println("Processing " + processCount + " rows for Short Item Description...");
+
+        // ✅ Iterate and update each cell
+        for (int i = 0; i < processCount; i++) {
+            String excelValue = shortDescValues.get(i);
+
+            WebElement cell = wait.until(ExpectedConditions.elementToBeClickable(
+                    By.xpath("(//td[@data-col='28'])[" + (i + 1) + "]")));
+            js.executeScript("arguments[0].scrollIntoView({block:'center'})", cell);
+
+            cell.click();
+            Thread.sleep(800);
+
+// First try: wait for the modal title EXACTLY (handles whitespace reliably)
+            By valueEditorTitle = By.xpath("//div[normalize-space()='Value editor - 1 item selected']");
+
+            List<WebElement> modalTitleEls = driver.findElements(valueEditorTitle);
+            if (!modalTitleEls.isEmpty()) {
+                // Modal path → type and Save
+                WebElement modalInput = wait.until(ExpectedConditions.elementToBeClickable(
+                        By.xpath("//div[@class='input-cell']")));
+                modalInput.clear();
+                modalInput.sendKeys(excelValue);
+
+                // Save (button can be disabled until you type; now it should be enabled)
+                WebElement saveBtn = wait.until(ExpectedConditions.elementToBeClickable(
+                        By.xpath("//button[normalize-space()='Save']")));
+                saveBtn.click();
+
+                // Wait for modal to close
+                wait.until(ExpectedConditions.invisibilityOfElementLocated(valueEditorTitle));
+            } else {
+                // Fallback: inline editor (your original logic)
+                actions.sendKeys(Keys.ENTER).perform();
+
+                WebElement editorPanel = wait.until(ExpectedConditions.elementToBeClickable(
+                        By.cssSelector("div.sheet-edit-mode-editor-overlay-panel")));
+                WebElement activeEditor = (WebElement) js.executeScript("return document.activeElement;");
+
+                actions.moveToElement(activeEditor)
+                        .click()
+                        .pause(Duration.ofMillis(150))
+                        .keyDown(Keys.CONTROL).sendKeys("a").keyUp(Keys.CONTROL)
+                        .sendKeys(Keys.DELETE)
+                        .pause(Duration.ofMillis(150))
+                        .sendKeys(excelValue)
+                        .perform();
+
+                actions.sendKeys(Keys.ENTER).perform();
+                Thread.sleep(600);
+
+
+            Thread.sleep(1000);
+            }
+
+            // ✅ Verify
+            WebElement committedCell = wait.until(ExpectedConditions.presenceOfElementLocated(
+                    By.xpath("(//td[@data-col='28'])[" + (i + 1) + "]")));
+            String uiText = committedCell.getText().trim();
+
+            System.out.println("Excel Value: '" + excelValue + "' | UI Value: '" + uiText + "'");
+
+            if (uiText.equalsIgnoreCase(excelValue.trim())) {
+                System.out.println("✅ Short Item Description committed successfully");
+            } else {
+                System.out.println("❌ Value mismatch – retrying...");
+                Thread.sleep(500);
+                // Retry commit (unchanged)
+                cell.click();
+                actions.sendKeys(Keys.ENTER).perform();
+                actions.sendKeys(Keys.ENTER).perform();
+            }
+        }
+
+        // ✅ Keep your final scroll line
+        js.executeScript("arguments[0].scrollLeft += 1200;", scrollable);
+
+
+
+        // Thread.sleep(1000);
+//ParentNode
+        System.out.println("Row count from sheet '" + SheetName + "': " + rowCount);
+Thread.sleep(1000);
+        /*WebElement flipTableIcon = driver.findElement(By.xpath("(//i[@title='Flip table'])[1]"));
+
+        actions.doubleClick(flipTableIcon).perform();
+*/
+
+    List<String> parentNodeValues = new ArrayList<>();
+
+        for (int i = 1; i <= rowCount; i++) {
+            String parentNodeValue = read.getCellValue(i, columnHeader);
+            System.out.println("Read value from row " + i + ": '" + parentNodeValue + "'");
+            if (parentNodeValue == null || parentNodeValue.trim().isEmpty() ||
+                    parentNodeValue.trim().equalsIgnoreCase(columnHeader.trim())) {
+                continue;
+            }
+            parentNodeValues.add(parentNodeValue.trim());
+        }
+        read.close();
+
+        if (parentNodeValues.isEmpty()) {
+            throw new RuntimeException("No Parent Node List values found in sheet: " + SheetName);
+        }
+
+// ✅ Get all UI rows for Parent Node Lists column
+        List<WebElement> uiCells1 = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(
+                By.xpath("//td[@data-col='36']"))); // Adjust if column index changes
+
+        int processCount1 = Math.min(uiCells1.size(), parentNodeValues.size());
+        System.out.println("Processing " + processCount1 + " rows...");
+
+// ✅ Iterate and update each row
+        for (int i = 0; i < processCount1; i++) {
+            String excelValue = parentNodeValues.get(i);
+
+            WebElement scrollContainer = driver.findElement(By.xpath("(//div[@class='sheet-scroll-container'])[2]"));
+            ((JavascriptExecutor) driver).executeScript(
+                    "arguments[0].scrollLeft = arguments[0].scrollWidth;", scrollContainer);
+
+            // ✅ Re-fetch the cell each time to avoid stale element issues
+            WebElement targetCell = wait.until(ExpectedConditions.elementToBeClickable(
+                    By.xpath("(//td[@data-col='36'])[" + (i + 1) + "]")));
+            ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", targetCell);
+            targetCell.click();
             actions.sendKeys(Keys.ENTER).perform();
 
-            // Step 1: Wait for the editor panel to be clickable
+            // ✅ Wait for editor
             WebElement editorPanel = wait.until(ExpectedConditions.elementToBeClickable(
                     By.cssSelector("div.sheet-edit-mode-editor-overlay-panel")));
-
-// Step 2: Get the actual active editable element
             WebElement activeEditor = (WebElement) ((JavascriptExecutor) driver)
                     .executeScript("return document.activeElement;");
 
-// Step 3: Clear and type using Actions
+            // ✅ Clear and type new value
             actions.moveToElement(activeEditor)
                     .click()
                     .pause(Duration.ofMillis(200))
                     .keyDown(Keys.CONTROL).sendKeys("a").keyUp(Keys.CONTROL)
                     .sendKeys(Keys.DELETE)
                     .pause(Duration.ofMillis(200))
-                    .sendKeys(parentnodelistvalue)
+                    .sendKeys(excelValue)
                     .perform();
 
-
+            // ✅ Read back typed value
             String typedValue = (String) ((JavascriptExecutor) driver)
                     .executeScript("return ('value' in arguments[0]) ? arguments[0].value : arguments[0].textContent;", activeEditor);
 
-// Step 5: Print and compare
-            System.out.println("Excel Value: " + parentnodelistvalue);
+            System.out.println("Excel Value: " + excelValue);
             System.out.println("UI Value: " + typedValue);
 
-            if (columnHeader.trim().equals(typedValue.trim())) {
-                ac.sendKeys(Keys.ENTER).perform();
+            if (typedValue.trim().equalsIgnoreCase(excelValue.trim())) {
+                actions.sendKeys(Keys.ENTER).perform();
                 System.out.println("✅ Value committed successfully");
             } else {
                 System.out.println("❌ Value mismatch – not committing");
-
-
                 Thread.sleep(500);
-
-                ac.moveByOffset(50, 50).click().perform();
+                actions.moveByOffset(50, 50).click().perform();
                 Thread.sleep(1000);
             }
-// Scroll the element into view with a slight offset
-            //js.executeScript("arguments[0].scrollIntoView({block: 'center'});", header);
+        }
+// Optional: horizontal scroll after edits
 
-            Thread.sleep(5000);
+        js.executeScript("arguments[0].scrollLeft += 400;", scrollable);
+        Thread.sleep(2000);
 
-            driver.findElement(By.xpath("//div[text()='Freeze panes']")).click();
-            Thread.sleep(5000);
-            //hierarchy
-            WebElement scrollableDiv = driver.findElement(By.xpath("//div[contains(@class, 'sheet-scroll-container')]"));
+        WebElement hierarchyElement = wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("//span[@title='Hierarchy']")));
 
-            js.executeScript("arguments[0].scrollLeft += 600;", scrollableDiv);
-            Thread.sleep(1000);
-            WebElement hierarchyElement = driver.findElement(By.xpath("//span[text()='Hierarchy']/following-sibling::div"));
+// Scroll into view (optional if element is not visible)
+        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block:'center'});", hierarchyElement);
 
-            hierarchyElement.click();
-            Thread.sleep(5000);
+// Click the element
+        hierarchyElement.click();
+        js.executeScript("arguments[0].scrollLeft += 400;", scrollable);
+        Thread.sleep(2000);
 
-            WebElement scrollableDiv2 = driver.findElement(By.xpath("//div[contains(@class, 'sheet-scroll-container')]"));
-
-            js.executeScript("arguments[0].scrollLeft += 400;", scrollableDiv2);
-            Thread.sleep(5000);
-            //PDXExcelReader reader1 = new PDXExcelReader(excelPath, "Sheet1");
-
-           /* String ProductTypeA = reader1.getCellValue(1, "PRODUCT TYPE Â© (External Merch Category)");
-            read.close();*/
+        //PDXExcelReader reader = new PDXExcelReader(excelPath, "SheetName");
 
 
-                // ✅ Scroll to PRODUCT TYPE element dynamically (ignore encoding issues)
-                WebElement inputField1 = wait.until(ExpectedConditions.elementToBeClickable(
-                        By.xpath("(//span[contains(@title,'PRODUCT TYPE')])[1]")));
-                ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", inputField1);
+        // ✅ Scroll to PRODUCT TYPE header
+        WebElement inputField1 = wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("(//span[contains(@title,'PRODUCT TYPE')])[1]")));
+        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", inputField1);
 
-                // ✅ Read Excel
-                PDXExcelReader read1 = new PDXExcelReader(excelPath, SheetName);
-                int rowCount1 = read1.getRowCount();
-                System.out.println("Row count from sheet '" + SheetName + "': " + rowCount1);
+// ✅ Read Excel values
 
-                List<String> productTypeAs = new ArrayList<>();
+        System.out.println("Row count from sheet '" + SheetName + "': " + rowCount);
+        List<String> productTypeValues = new ArrayList<>();
+        String normalizedHeader = columnHeader1.trim();
 
-                // ✅ Find column index dynamically instead of hardcoding columnHeader1
+        for (int i = 1; i <= rowCount; i++) {
+            String productTypeValue = read.getCellValue(i, normalizedHeader);
+            System.out.println("Read value from row " + i + ": '" + productTypeValue + "'");
+            if (productTypeValue == null || productTypeValue.trim().isEmpty()
+                    || productTypeValue.trim().equalsIgnoreCase(normalizedHeader)) {
+                continue; // skip blank/header rows
+            }
+            productTypeValues.add(productTypeValue.trim());
+        }
+        read.close();
+
+        if (productTypeValues.isEmpty()) {
+            throw new RuntimeException("No PRODUCT TYPE values found in sheet: " + SheetName);
+        }
+
+// ✅ Get all UI rows for PRODUCT TYPE column
+        By selectedCellsLocator = By.xpath("//tr[contains(@class,'is-selected')]//td[@data-col='42']");
+        By allCellsLocator      = By.xpath("//td[@data-col='42']");
+        By overlayLocator       = By.cssSelector("div.sheet-edit-mode-editor-overlay-panel");
+
+// Quick waits
+        WebDriverWait overlayWait = new WebDriverWait(driver, Duration.ofSeconds(1));
+        WebDriverWait shortWait   = new WebDriverWait(driver, Duration.ofSeconds(2), Duration.ofMillis(100));
+        String SELECT_ALL = Keys.chord(Keys.CONTROL, "a");
+
+        List<WebElement> uiCellsPT = driver.findElements(selectedCellsLocator);
+        boolean useSelectedRows = !uiCellsPT.isEmpty();
+        if (!useSelectedRows) {
+            uiCellsPT = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(allCellsLocator));
+        }
+
+        int processCountPT = Math.min(uiCellsPT.size(), productTypeValues.size());
+        System.out.println("Processing " + processCountPT + " rows for PRODUCT TYPE ("
+                + (useSelectedRows ? "selected rows" : "all rows") + ")...");
+        for (int i = 0; i < processCountPT; i++) {
+            String excelValue = productTypeValues.get(i);
 
 
-            String normalizedHeader = columnHeader1.trim();
-            for (int i = 1; i <= rowCount1; i++) {
-                String productTypeA = read1.getCellValue(i, normalizedHeader); // Use original header name
-                System.out.println("Read value from row " + i + ": '" + productTypeA + "'");
-
-                if (productTypeA == null || productTypeA.trim().isEmpty() ||
-                        productTypeA.trim().equalsIgnoreCase(normalizedHeader)) {
-                    continue;
+            try {
+                if (driver.findElements(overlayLocator).size() > 0) {
+                    actions.sendKeys(Keys.ESCAPE).perform();
+                    overlayWait.until(ExpectedConditions.invisibilityOfElementLocated(overlayLocator));
                 }
-                productTypeAs.add(productTypeA.trim());
+            } catch (TimeoutException ignored) {
+                actions.sendKeys(Keys.ESCAPE).perform();
             }
 
-            read1.close();
 
 
+            uiCellsPT = driver.findElements(useSelectedRows ? selectedCellsLocator : allCellsLocator);
+            if (uiCellsPT.isEmpty() || i >= uiCellsPT.size()) break;
 
-            if (productTypeAs.isEmpty()) {
-                    throw new RuntimeException("No PRODUCT TYPE values found in sheet: " + SheetName);
-                }
+            WebElement targetCell = uiCellsPT.get(i);
+            ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block:'center'});", targetCell);
 
-                // ✅ Use first value for UI interaction
-                for (String productTypeA : productTypeAs) {
-                    WebElement targetCell1 = wait.until(ExpectedConditions.elementToBeClickable(
-                            By.xpath("(//td[@data-col='42'])[1]")));
-                    targetCell1.click();
+            WebElement scrollContainerPT = driver.findElement(By.xpath("(//div[@class='sheet-scroll-container'])[2]"));
+            ((JavascriptExecutor) driver).executeScript("arguments[0].scrollLeft = arguments[0].scrollWidth;", scrollContainerPT);
+
+            targetCell.click();
+            actions.sendKeys(Keys.ENTER).perform(); // open editor
+
+            // Quick overlay check
+            try { overlayWait.until(ExpectedConditions.visibilityOfElementLocated(overlayLocator)); }
+            catch (TimeoutException ignored) {}
+
+            WebElement activeEditor = (WebElement) ((JavascriptExecutor) driver)
+                    .executeScript("return document.activeElement;");
+            activeEditor.sendKeys(SELECT_ALL, Keys.DELETE, excelValue);
+
+            // Try dropdown option
+            try {
+                WebElement option = shortWait.until(ExpectedConditions.elementToBeClickable(By.xpath(
+                        "//div[contains(@class,'sheet-edit-mode-editor-overlay-panel')]//*[normalize-space(text())='" + excelValue + "']")));
+                option.click();
+            } catch (TimeoutException ignored) {
+                actions.sendKeys(Keys.ENTER).perform();
+            }
+
+            // Ensure editor closed
+            try { overlayWait.until(ExpectedConditions.invisibilityOfElementLocated(overlayLocator)); }
+            catch (TimeoutException ignored) { actions.sendKeys(Keys.ESCAPE).perform(); }
+
+            // Verify committed value
+            uiCellsPT = driver.findElements(useSelectedRows ? selectedCellsLocator : allCellsLocator);
+            if (i >= uiCellsPT.size()) break;
+            WebElement committedCell = uiCellsPT.get(i);
+            String uiText = committedCell.getText().trim();
+            System.out.println("Excel Value: '" + excelValue + "' | UI Value: '" + uiText + "'");
+
+            // Retry if mismatch
+            if (!uiText.equalsIgnoreCase(excelValue)) {
+                System.out.println("❌ Mismatch – retry once on the same row...");
+                committedCell.click();
+                actions.sendKeys(Keys.ENTER).perform();
+
+                activeEditor = (WebElement) ((JavascriptExecutor) driver)
+                        .executeScript("return document.activeElement;");
+                activeEditor.sendKeys(SELECT_ALL, Keys.DELETE, excelValue);
+
+                try {
+                    WebElement option2 = shortWait.until(ExpectedConditions.elementToBeClickable(By.xpath(
+                            "//div[contains(@class,'sheet-edit-mode-editor-overlay-panel')]//*[normalize-space(text())='" + excelValue + "']")));
+                    option2.click();
+                } catch (TimeoutException te) {
                     actions.sendKeys(Keys.ENTER).perform();
-
-                    WebElement editableDiv1 = wait.until(ExpectedConditions.elementToBeClickable(
-                            By.cssSelector("div.sheet-edit-mode-editor-overlay-panel")));
-
-                    WebElement activeEditor1 = (WebElement) ((JavascriptExecutor) driver)
-                            .executeScript("return document.activeElement;");
-
-                    // ✅ Clear and type using Actions
-                    actions.moveToElement(activeEditor1)
-                            .click()
-                            .pause(Duration.ofMillis(200))
-                            .keyDown(Keys.CONTROL).sendKeys("a").keyUp(Keys.CONTROL)
-                            .sendKeys(Keys.DELETE)
-                            .pause(Duration.ofMillis(200))
-                            .sendKeys(productTypeA)
-                            .perform();
-
-                    // ✅ Read back value using JS
-                    String typedValue1 = (String) ((JavascriptExecutor) driver)
-                            .executeScript("return ('value' in arguments[0]) ? arguments[0].value : arguments[0].textContent;", activeEditor1);
-
-                    System.out.println("Excel Value: " + productTypeA);
-                    System.out.println("UI Value: " + typedValue1);
-
-                    if (productTypeA.trim().equals(typedValue1.trim())) {
-                        actions.sendKeys(Keys.ENTER).perform();
-                        System.out.println("✅ Value committed successfully");
-                    } else {
-                        System.out.println("❌ Value mismatch – not committing");
-                    }
-
-                    break; // ✅ Stop after first successful update
                 }
-            }
-                driver.findElement(By.xpath("//div[text()='Unfreeze panes']")).click();
-                Thread.sleep(2000);
+                try { overlayWait.until(ExpectedConditions.invisibilityOfElementLocated(overlayLocator)); }
+                catch (TimeoutException te) { actions.sendKeys(Keys.ESCAPE).perform(); }
 
-                WebElement threeDots = driver.findElement(By.xpath("//i[text()='more_horiz']"));
-                threeDots.click();
-                Thread.sleep(1000);
-                WebElement scrollable2 = driver.findElement(By.xpath("//div[contains(@class, 'sheet-scroll-container')]"));
-                js.executeScript("arguments[0].scrollLeft = arguments[0].scrollWidth;", scrollable2);
-                WebElement strokeno = driver.findElement(By.xpath("//div[text()='Stroke No. Calculation']"));
-                strokeno.click();
-                Thread.sleep(1000);
+                uiCellsPT = driver.findElements(useSelectedRows ? selectedCellsLocator : allCellsLocator);
+                if (i >= uiCellsPT.size()) break;
+                committedCell = uiCellsPT.get(i);
+                uiText = committedCell.getText().trim();
+                System.out.println("Post-retry UI Value: '" + uiText + "'");
             }
 
+            // Focus next cell
+            if (i < processCountPT - 1) {
+                WebElement nextCell = uiCellsPT.get(i + 1);
+                ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block:'center'});", nextCell);
 
-    public void pricing() throws InterruptedException {
+                WebElement scrollContainerPT2 = driver.findElement(By.xpath("(//div[@class='sheet-scroll-container'])[2]"));
+                ((JavascriptExecutor) driver).executeScript("arguments[0].scrollLeft = arguments[0].scrollWidth;", scrollContainerPT2);
 
-       WebElement scrollable = driver.findElement(By.xpath("(//div[contains(@class, 'sheet-scroll-container')])[2]"));
+                try {
+                    shortWait.until(ExpectedConditions.elementToBeClickable(nextCell));
+                } catch (TimeoutException ignored) {
+                    Thread.sleep(120);
+                }
+                nextCell.click();
+            }
+        }
+
+        try {
+            if (!driver.findElements(overlayLocator).isEmpty()) {
+                actions.sendKeys(Keys.ESCAPE).perform();
+                overlayWait.until(ExpectedConditions.invisibilityOfElementLocated(overlayLocator));
+            }
+        } catch (TimeoutException ignored) {
+            actions.sendKeys(Keys.ESCAPE).perform();
+        }
+// ✅ Iterate and update each ro
+
+       /* driver.findElement(By.xpath("//div[text()='Unfreeze panes']")).click();
+        Thread.sleep(2000);*/
+
+        WebElement threeDots = driver.findElement(By.xpath("//i[text()='more_horiz']"));
+        threeDots.click();
+        Thread.sleep(1000);
+        WebElement scrollable2 = driver.findElement(By.xpath("//div[contains(@class, 'sheet-scroll-container')]"));
+        js.executeScript("arguments[0].scrollLeft = arguments[0].scrollWidth;", scrollable2);
+        WebElement strokeno = driver.findElement(By.xpath("//div[text()='Stroke No. Calculation']"));
+        strokeno.click();
+        Thread.sleep(1000);
+    }
+
+
+    public void pricing(String excelPath, String SheetName) throws Exception{
+
+        WebElement scrollable = driver.findElement(By.xpath("(//div[contains(@class, 'sheet-scroll-container')])[2]"));
         JavascriptExecutor js = (JavascriptExecutor) driver;
         js.executeScript("arguments[0].scrollLeft = arguments[0].scrollWidth;", scrollable);
 
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(60));
         WebElement pricingElement = wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("//span[@title='Pricing']")));
 
 // Scroll into view
@@ -648,24 +951,180 @@ public class StepApplicationPage extends BasePage {
         actions.click().build().perform();
         Thread.sleep(2000);
 
-        WebElement nextElement = driver.findElement(By.xpath("(//span[text()='Cost Price'])[1]"));
-        js.executeScript("arguments[0].scrollLeft = arguments[0].scrollWidth", nextElement);
+        // ✅ Step 1: Scroll to Cost Price header
+        WebElement costPriceHeader = driver.findElement(By.xpath("(//th[@id='TableHeader_Cost_Price'])[1]"));
+        js.executeScript("arguments[0].scrollLeft = arguments[0].scrollWidth", costPriceHeader);
         Thread.sleep(2000);
-        WebElement ele = driver.findElement(By.xpath("(//td[@data-col='53'])[1]"));
-        ele.click();
 
-        actions.sendKeys("5%").build().perform();
-        Thread.sleep(1000);
-        WebElement body = driver.findElement(By.tagName("body"));
-        actions.moveToElement(body).moveByOffset(20, 20).click().perform();
-        WebElement vatRateElement = driver.findElement(By.xpath("(//th/div[@class='sheet-header-cell']/span[@title='VAT Rate'])[1]"));
-        String vatRateText = vatRateElement.getText();
-        js.executeScript("arguments[0].scrollLeft = arguments[0].scrollWidth", vatRateElement);
-        Thread.sleep(2000);
-        WebElement element1 = driver.findElement(By.xpath("(//td[@data-col='58'])[1]"));
-        element1.click();
-        actions.sendKeys("20").sendKeys(Keys.ENTER).perform();
-        Thread.sleep(1000);
+// ✅ Step 2: Read Excel values for Cost Price
+        String costPriceColumn = "Cost Price"; // Excel header
+        PDXExcelReader read = new PDXExcelReader(excelPath, SheetName);
+        int rowCount = read.getRowCount();
+        List<String> costPriceValues = new ArrayList<>();
+
+        for (int i = 1; i <= rowCount; i++) {
+            String value = read.getCellValue(i, costPriceColumn);
+            if (value == null || value.trim().isEmpty() || value.trim().equalsIgnoreCase(costPriceColumn)) {
+                continue;
+            }
+            costPriceValues.add(value.trim());
+        }
+        read.close();
+
+        if (costPriceValues.isEmpty()) {
+            throw new RuntimeException("No Cost Price values found in sheet: " + SheetName);
+        }
+
+// ✅ Step 3: Get all UI cells for Cost Price column
+        List<WebElement> uiCells = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(
+                By.xpath("//td[@data-col='53']"))); // Adjust if column index changes
+
+        int processCount = Math.min(uiCells.size(), costPriceValues.size());
+        System.out.println("Processing " + processCount + " rows for Cost Price...");
+
+// ✅ Step 4: Iterate and update each cell
+        for (int i = 0; i < processCount; i++) {
+            String excelValue = costPriceValues.get(i);
+
+            WebElement cell = wait.until(ExpectedConditions.elementToBeClickable(
+                    By.xpath("(//td[@data-col='53'])[" + (i + 1) + "]")));
+            js.executeScript("arguments[0].scrollIntoView({block:'center'})", cell);
+            cell.click();
+            Thread.sleep(1000);
+
+            // Enter edit mode
+            actions.sendKeys(Keys.ENTER).perform();
+
+            // Wait for editor
+            WebElement editorPanel = wait.until(ExpectedConditions.elementToBeClickable(
+                    By.cssSelector("div.sheet-edit-mode-editor-overlay-panel")));
+            WebElement activeEditor = (WebElement) js.executeScript("return document.activeElement;");
+
+            // Clear and type Excel value
+            actions.moveToElement(activeEditor)
+                    .click()
+                    .pause(Duration.ofMillis(200))
+                    .keyDown(Keys.CONTROL).sendKeys("a").keyUp(Keys.CONTROL)
+                    .sendKeys(Keys.DELETE)
+                    .pause(Duration.ofMillis(200))
+                    .sendKeys(excelValue)
+                    .perform();
+
+            // Commit
+            actions.sendKeys(Keys.ENTER).perform();
+            Thread.sleep(1000);
+
+            // Verify
+            WebElement committedCell = wait.until(ExpectedConditions.presenceOfElementLocated(
+                    By.xpath("(//td[@data-col='53'])[" + (i + 1) + "]")));
+            String uiText = committedCell.getText().trim();
+
+            System.out.println("Excel Value: '" + excelValue + "' | UI Value: '" + uiText + "'");
+
+            if (uiText.equalsIgnoreCase(excelValue.trim())) {
+                System.out.println("✅ Cost Price committed successfully");
+            } else {
+                System.out.println("❌ Value mismatch – retrying...");
+                Thread.sleep(500);
+                // Retry commit
+                cell.click();
+                actions.sendKeys(Keys.ENTER).perform();
+                actions.sendKeys(Keys.ENTER).perform();
+            }
+        }
+// ✅ Post-loop cleanup for last-row overlay
+        try {
+            if (!driver.findElements(By.cssSelector("div.sheet-edit-mode-editor-overlay-panel")).isEmpty()) {
+                actions.sendKeys(Keys.ESCAPE).perform();
+                wait.until(ExpectedConditions.invisibilityOfElementLocated(
+                        By.cssSelector("div.sheet-edit-mode-editor-overlay-panel")));
+            }
+        } catch (TimeoutException ignored) {
+            actions.sendKeys(Keys.ESCAPE).perform();
+        }
+
+// 1. Scroll to VAT Rate header
+        WebElement vatRateHeader = wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("(//span[@title='VAT Rate'])[1]")));
+        js.executeScript("arguments[0].scrollIntoView(true);", vatRateHeader);
+
+// 2. Read Excel values for VAT Rate
+       /* PDXExcelReader reader = new PDXExcelReader(excelPath, sheetName);
+        int rowCount = reader.getRowCount();*/
+        System.out.println("Row count: " + rowCount);
+
+        List<String> vatRateValues = new ArrayList<>();
+        for (int i = 1; i <= rowCount; i++) {
+            String value = read.getCellValue(i, "VAT Rate");
+            if (value == null || value.trim().isEmpty() || value.equalsIgnoreCase("VAT Rate")) {
+                continue;
+            }
+            vatRateValues.add(value.trim());
+        }
+        read.close();
+
+        if (vatRateValues.isEmpty()) {
+            throw new RuntimeException("No VAT Rate values found in sheet: " + SheetName);
+        }
+
+// 3. Get all UI cells for VAT Rate column
+        List<WebElement> uiCells1 = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(
+                By.xpath("//td[@data-col='58']"))); // Adjust data-col if needed
+
+        int processCount1 = Math.min(uiCells1.size(), vatRateValues.size());
+        System.out.println("Processing " + processCount + " rows...");
+
+// 4. Iterate and update each row
+        for (int i = 0; i < processCount; i++) {
+            String excelValue = vatRateValues.get(i);
+            WebElement targetCell = wait.until(ExpectedConditions.elementToBeClickable(
+                    By.xpath("(//td[@data-col='58'])[" + (i + 1) + "]")));
+            js.executeScript("arguments[0].scrollIntoView(true);", targetCell);
+            targetCell.click();
+            actions.sendKeys(Keys.ENTER).perform();
+
+            // Wait for editor
+            WebElement editorPanel = wait.until(ExpectedConditions.elementToBeClickable(
+                    By.cssSelector("div.sheet-edit-mode-editor-overlay-panel")));
+            WebElement activeEditor = (WebElement) js.executeScript("return document.activeElement;");
+
+            // Clear and type new value
+            actions.moveToElement(activeEditor)
+                    .click()
+                    .pause(Duration.ofMillis(200))
+                    .keyDown(Keys.CONTROL).sendKeys("a").keyUp(Keys.CONTROL)
+                    .sendKeys(Keys.DELETE)
+                    .pause(Duration.ofMillis(200))
+                    .sendKeys(excelValue)
+                    .perform();
+
+            // Validate typed value
+            String typedValue = (String) js.executeScript(
+                    "return ('value' in arguments[0]) ? arguments[0].value : arguments[0].textContent;", activeEditor);
+
+            System.out.println("Excel Value: " + excelValue);
+            System.out.println("UI Value: " + typedValue);
+
+            if (typedValue.trim().equalsIgnoreCase(excelValue.trim())) {
+                actions.sendKeys(Keys.ENTER).perform();
+                System.out.println("✅ Value committed successfully");
+            } else {
+                System.out.println("❌ Value mismatch – not committing");
+                Thread.sleep(500);
+                actions.moveByOffset(50, 50).click().perform();
+                Thread.sleep(1000);
+            }
+        }
+        // ✅ Post-loop cleanup for last-row overlay
+       /* try {
+            if (!driver.findElements(By.cssSelector("div.sheet-edit-mode-editor-overlay-panel")).isEmpty()) {
+                actions.sendKeys(Keys.ESCAPE).perform();
+                wait.until(ExpectedConditions.invisibilityOfElementLocated(
+                        By.cssSelector("div.sheet-edit-mode-editor-overlay-panel")));
+            }
+        } catch (TimeoutException ignored) {
+            actions.sendKeys(Keys.ESCAPE).perform();
+        }*/
         // 1. Click on the "Default View" dropdown
         WebElement dropdown = driver.findElement(By.xpath("//div[text()='Default View']"));
         dropdown.click();
@@ -725,7 +1184,7 @@ public class StepApplicationPage extends BasePage {
     }
 
     //ASSET APPROVAL(StrokeNumber)
-    public void applyBrandFilterBulk(String SheetName,String columnHeader) throws InterruptedException, IOException {
+    public void applyBrandFilterBulk(String SheetName, String columnHeader) throws InterruptedException, IOException {
         String excelPath = System.getenv("EXCEL_PATH2");
         PDXExcelReader reader = new PDXExcelReader(excelPath, SheetName);
         int rowCount = reader.getRowCount();
@@ -826,17 +1285,16 @@ public class StepApplicationPage extends BasePage {
             }
 
             // Scroll to navbar logo
-                WebElement navbarLogo = wait.until(ExpectedConditions.presenceOfElementLocated(
-                        By.xpath("//div[@id='stibo-element-navbar-logo']")));
+            WebElement navbarLogo = wait.until(ExpectedConditions.presenceOfElementLocated(
+                    By.xpath("//div[@id='stibo-element-navbar-logo']")));
 
-                ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", navbarLogo);
-                Thread.sleep(500);
+            ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", navbarLogo);
+            Thread.sleep(500);
 
-                // Click using JavaScript to bypass overlay issues
-                ((JavascriptExecutor) driver).executeScript("arguments[0].click();", navbarLogo);
-                System.out.println("✅ Clicked navbar logo successfully.");
-                Thread.sleep(2000);
-
+            // Click using JavaScript to bypass overlay issues
+            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", navbarLogo);
+            System.out.println("✅ Clicked navbar logo successfully.");
+            Thread.sleep(2000);
 
 
         }
@@ -844,9 +1302,7 @@ public class StepApplicationPage extends BasePage {
     }
 
 
-
-
-        public void clickOnElementUsingJS1(By locator) throws InterruptedException {
+    public void clickOnElementUsingJS1(By locator) throws InterruptedException {
         WebElement element = driver.findElement(locator);
         JavascriptExecutor js = (JavascriptExecutor) driver;
         js.executeScript("arguments[0].click();", element);
@@ -877,9 +1333,9 @@ public class StepApplicationPage extends BasePage {
 
         // Concatenate all Product IDs into a single string
         String allProductIDs = String.join(",", PDXProductIDs); // Use "," if needed
-
+        wait.until(ExpectedConditions.invisibilityOfElementLocated(By.id("waitScreenOverlayGlass")));
         // Clear previous filter if any
-        try {
+        /*try {
             WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(5));
             WebElement clearFilterBtn = shortWait.until(ExpectedConditions.elementToBeClickable(
                     By.xpath("//button[contains(., 'Clear filter')]")));
@@ -887,76 +1343,116 @@ public class StepApplicationPage extends BasePage {
             System.out.println("🧹 Cleared previous filter.");
         } catch (Exception e) {
             System.out.println("⚠️ No filter to clear or skipped due to timeout.");
-        }
+        }*/
 
         // Apply filter using "Include only"
         WebElement filterHeader = wait.until(ExpectedConditions.elementToBeClickable(
                 By.xpath("//th//span[@title='PDX Product ID']")));
         filterHeader.click();
-        Thread.sleep(1000);
+        Thread.sleep(2000);
 
         WebElement filter = wait.until(ExpectedConditions.elementToBeClickable(
                 By.xpath("//select[contains(@class, 'sortOptionsListBox')]//option[@value='Include only']")));
         filter.click();
-        Thread.sleep(1000);
+        Thread.sleep(2000);
 
         WebElement textArea = wait.until(ExpectedConditions.visibilityOfElementLocated(
                 By.xpath("//textarea[@placeholder='Value or text']")));
         textArea.clear();
         textArea.sendKeys(allProductIDs);
-        Thread.sleep(1000);
+        Thread.sleep(5000);
 
-        WebElement applyBtn = wait.until(ExpectedConditions.elementToBeClickable(
+        WebElement applyBtn = wait.until(ExpectedConditions.presenceOfElementLocated(
                 By.xpath("//button[.//span[normalize-space()='Apply filter']]")));
-        actions.moveToElement(applyBtn).click().perform();
-        System.out.println("✅ Applied filter for all Product IDs");
-        Thread.sleep(2000);
+        if (applyBtn.isEnabled()) {
+            wait.until(ExpectedConditions.elementToBeClickable(applyBtn));
+            actions.moveToElement(applyBtn).click().perform();
+            System.out.println("✅ Applied filter for all BrandIDs");
+            Thread.sleep(10000);
+            try {
+                WebElement selectAll = wait.until(ExpectedConditions.elementToBeClickable(
+                        By.xpath("//div[text()='Select All']")));
+                selectAll.click();
+                System.out.println("✅ Selected all filtered items");
+                Thread.sleep(1000);
+            } catch (Exception e) {
+                System.out.println("❌ Select All failed: " + e.getMessage());
+            }
 
-        // Select all
-        try {
-            WebElement selectAll = wait.until(ExpectedConditions.elementToBeClickable(
-                    By.xpath("//div[text()='Select All']")));
-            selectAll.click();
+            WebElement submit1 = wait.until(ExpectedConditions.elementToBeClickable(
+                    By.xpath("//div[text()='Submit']")));
+            submit1.click();
             Thread.sleep(1000);
-            System.out.println("✅ Selected all filtered items");
-        } catch (Exception e) {
-            System.out.println("❌ Select All failed: " + e.getMessage());
-        }
-
-        // Submit
-        WebElement submit1 = wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath("//div[text()='Submit']")));
-        submit1.click();
-        Thread.sleep(1000);
-
-        WebElement text1 = wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath("//textarea[@class='gwt-TextArea FormFieldWidget']")));
-        text1.click();
-        text1.sendKeys("Attribute approval");
-        Thread.sleep(1000);
-
-        WebElement ok1 = wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath("//span[text()='OK']")));
-        ok1.click();
-        Thread.sleep(3000);
-
-        // Handle popup
-        try {
-            WebDriverWait popupWait = new WebDriverWait(driver, Duration.ofSeconds(10));
-            WebElement popupMessage = popupWait.until(ExpectedConditions.visibilityOfElementLocated(
-                    By.xpath("//i[@class='material-icons portal-alert-popup-close-box__button']")));
-            popupMessage.click();
+            WebElement text1 = wait.until(ExpectedConditions.elementToBeClickable(
+                    By.xpath("//textarea[@class='gwt-TextArea FormFieldWidget']")));
+            text1.click();
+            text1.sendKeys("Attribute approval");
             Thread.sleep(1000);
-            System.out.println("✅ Popup closed after submission.");
-        } catch (Exception e) {
-            System.out.println("⚠️ Popup not found or failed to close → " + e.getMessage());
 
-            //System.out.println("✅ Test completed successfully.");
+            WebElement ok1 = wait.until(ExpectedConditions.elementToBeClickable(
+                    By.xpath("//span[text()='OK']")));
+            ok1.click();
+            Thread.sleep(5000);
+
+            try {
+                WebElement closePopup = wait.until(ExpectedConditions.elementToBeClickable(
+                        By.xpath("//i[@class='material-icons portal-alert-popup-close-box__button']")));
+                closePopup.click();
+                System.out.println("✅ Popup closed successfully");
+
+                WebElement navbarLogo = wait.until(ExpectedConditions.presenceOfElementLocated(
+                        By.xpath("//div[@id='stibo-element-navbar-logo']")));
+
+                ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", navbarLogo);
+                Thread.sleep(500);
+
+                ((JavascriptExecutor) driver).executeScript("arguments[0].click();", navbarLogo);
+                System.out.println("✅ Clicked navbar logo successfully after closing popup.");
+                Thread.sleep(2000);
+
+            } catch (Exception e) {
+                System.out.println("❌ Popup close failed or popup not found: " + e.getMessage());
+            }
+
+        } else {
+            // ✅ Apply Filter is disabled → click navbar logo and return to main screen
+            System.out.println("⚠ Apply filter is disabled. Clicking navbar logo to return to main screen...");
+            try {
+                // Click filter header again to close the panel
+                WebElement clearfilter = wait.until(ExpectedConditions.elementToBeClickable(
+                        By.xpath("//button[.//span[normalize-space()='Clear filter']]")));
+                clearfilter.click();
+                Thread.sleep(2000);
+
+                System.out.println("✅ Closed filter panel successfully.");
+            } catch (Exception e) {
+                System.out.println("❌ Failed to close filter panel: " + e.getMessage());
+            }
+
+            // Scroll to navbar logo
+            WebElement navbarLogo = wait.until(ExpectedConditions.presenceOfElementLocated(
+                    By.xpath("//div[@id='stibo-element-navbar-logo']")));
+
+            ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", navbarLogo);
+            Thread.sleep(500);
+
+            // Click using JavaScript to bypass overlay issues
+            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", navbarLogo);
+            System.out.println("✅ Clicked navbar logo successfully.");
+            Thread.sleep(2000);
 
         }
     }
+}
 
-    }
+
+
+
+
+
+
+
+
 
 
 

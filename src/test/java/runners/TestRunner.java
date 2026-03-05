@@ -14,11 +14,12 @@ import io.cucumber.testng.CucumberOptions;
 import org.junit.runner.RunWith;
 
 
-@RunWith(Cucumber.class)
+//@RunWith(Cucumber.class)
 @CucumberOptions(
         features = "src/test/resources/features",
-        glue ={"stepdefinitions", "hooks"},
-        tags ="@wholesale_step_login or @wholesale_step_approvals ",
+        glue ={"stepdefinitions", "hooks","support"},
+        tags = "@consignment_step_approvals_rework1",
+
         plugin = {
                 "pretty",
                 "json:target/cucumber-reports/cucumber.json",  // ✅ Required for maven-cucumber-reporting
@@ -31,9 +32,6 @@ import org.junit.runner.RunWith;
 
 )
 public class TestRunner extends AbstractTestNGCucumberTests {
-
-
-
 
 
 }

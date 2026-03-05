@@ -17,7 +17,7 @@ public class ElementLocators {
     public static final String IMPORT_DATA_ICON_XPATH = "//span[text()=' Import data ']";
     public static final String UPLOAD_FILE_BUTTON_XPATH = "//button[text() = ' Upload file ']";
     public static final String EXCEL_SHEET_ABS_PATH = "C:\\Users\\2451875\\OneDrive - TCS COM PROD\\BRAND\\PdxStibo\\PdxStibo\\src\\test\\resources\\data\\TestDataEAN.xlsx ";
-    public static final String APPLY_BUTTON_XPATH = "//span[text() =' Apply '] ";
+    public static final String APPLY_BUTTON_XPATH = "//button[.//span[normalize-space()='Apply']] ";
     public static final String OK_BUTTON_XPATH = "//span[text() =' Ok ']";
     public static final String MASTER_DATA_ICON_XPATH = "//span[text() =' Master data ']";
     public static final String MASTER_DATA_CHANNEL_HEADER_XPATH = "//h1[text() = 'Master data - List view']";
@@ -25,7 +25,7 @@ public class ElementLocators {
     //Filter to current date
     public static final String PRODUCT_NAME_XPATH="//input[@placeholder='Search for a product name']";
     public static final String FILTER_BUTTON_XPATH = "//mat-icon[text() = 'filter_list']";
-    public static final String PRODUCT_LIFECYCLE_DATES_DROPDOWN_XPATH = "//span[text() = 'Product lifecycle dates']";
+    public static final String PRODUCT_LIFECYCLE_DATES_DROPDOWN_XPATH = "//span[normalize-space(text())='Product lifecycle dates']";
     public static final String START_DATE_XPATH = "//input[@placeholder='Start date']";
     public static final String CURRENT_DATE_XPATH = "//button[@aria-current='date']";
 
@@ -34,7 +34,7 @@ public class ElementLocators {
     public static final String PRODUCT_CHECKBOX_LIST_XPATH = "//input[@type='checkbox']";
 
     //add to channel
-    public static final String THREE_DOTS_ICON_XPATH = "//button[@aria-haspopup='menu']";
+    public static final String THREE_DOTS_ICON_XPATH = "//button[.//mat-icon[normalize-space()='more_vert']]";
     public static final String ADD_TO_CHANNEL_XPATH = "button:nth-of-type(5)";
 
     //channel & category

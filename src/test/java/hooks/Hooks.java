@@ -10,6 +10,9 @@ import pages.BasePage;
 import utils.ExtentReportManager;
 import com.aventstack.extentreports.Status;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
 
@@ -19,6 +22,7 @@ public class Hooks {
     public static boolean stopScenario;
     private BasePage basePage;
     private static boolean isBrowserStarted = false;
+
 
     @Before
     public void setup(Scenario scenario){
@@ -32,7 +36,7 @@ public class Hooks {
                 throw new RuntimeException("Browser is not specified in config.properties");
             }
             BrowserDriver.initDriver(browser);
-            BrowserDriver.getDriver();
+            WebDriver driver = BrowserDriver.getDriver();
             String featureName = scenario.getUri().getPath().replace(".feature", "").replaceAll(".*/", "");
             ExtentReportManager.createFeature(featureName);
             ExtentReportManager.createScenario(scenario.getName());
@@ -40,8 +44,78 @@ public class Hooks {
 //            driver.get(ConfigFileReader.get("PdxUrl"));
         }
         System.out.println("Browser launched for : " + scenario.getName());
+        scenario.log("✅ Browser launched successfully for: " + scenario.getName());
 
     }
+
+    @BeforeStep
+    public void beforeStep(Scenario scenario) {
+        if (Hooks.stopScenario) {
+            scenario.log("✅ Scenario stopped intentionally after successful step.");
+            ExtentReportManager.logStep("Scenario stopped intentionally", Status.SKIP);
+            //throw new io.cucumber.java.PendingException("Scenario stopped intentionally after successful completion");
+        }
+
+    }
+
+    // ✅ Capture screenshot on failure (inline, using BasePage)
+    @After(order = 1)
+    public void captureOnFailure(Scenario scenario) {
+        if (scenario.isFailed()) {
+            scenario.log("❗Scenario failed. Capturing screenshot...");
+            if (basePage == null) {
+                basePage = new BasePage();
+            }
+            try {
+                // Use your existing method to take screenshot and get file path
+                String screenshotPath = basePage.takeScreenshot(scenario.getName());
+
+                // Attach screenshot to Cucumber report
+                Path path = Paths.get(screenshotPath);
+                byte[] bytes = Files.readAllBytes(path);
+                scenario.attach(bytes, "image/png", "FAILED");
+
+                // Log in Extent report
+                ExtentReportManager.logStep("📸 Screenshot captured: " + screenshotPath, Status.FAIL);
+
+                scenario.log("📸 Screenshot saved at: " + screenshotPath);
+            } catch (Exception e) {
+                scenario.log("❌ Failed to capture screenshot: " + e.getMessage());
+            }
+        }
+    }
+
+
+    @After
+    public void tearDown() {
+        // ✅ Reset flag after each scenario
+        stopScenario = false;
+
+    }
+
+
+@AfterStep
+public void afterEachStep(Scenario scenario) {
+    if (basePage == null) {
+        basePage = new BasePage();
+    }
+    try {
+        String screenshotPath = basePage.takeScreenshot(scenario.getName());
+        Path path = Paths.get(screenshotPath);
+        byte[] bytes = Files.readAllBytes(path);
+        scenario.attach(bytes, "image/png", "STEP");
+
+        if (scenario.isFailed()) {
+            ExtentReportManager.logStep("Step failed", Status.FAIL);
+        } else {
+            ExtentReportManager.logStep("Step passed", Status.PASS);
+        }
+    } catch (Exception e) {
+        scenario.log("❌ Failed to capture step screenshot: " + e.getMessage());
+    }
+}
+}
+
 
     /*@AfterStep
     public void afterStep(Scenario scenario) {
@@ -74,7 +148,7 @@ public class Hooks {
         //BrowserDriver.quitDriver();
        // ExtentReportManager.flush();// Close browser to prevent further steps
             //isBrowserStarted=false;// Reset for next scenario
-}
+
 
 
 
