@@ -1,4 +1,4 @@
-package stepdefinitions;
+package stepDefinitions;
 
 import hooks.Hooks;
 import io.cucumber.java.en.And;
@@ -10,7 +10,7 @@ import utils.ConfigFileReader;
 
 import java.io.IOException;
 
-public class Reworksize extends BasePage {
+public class ReworksizeStep extends BasePage {
     ReworkSize reworksizePage = new ReworkSize ();
 
     @When("The user navigates to the Buyer Approval screen")

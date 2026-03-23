@@ -19,11 +19,13 @@ import java.util.List;
 
 
 public class ReworkInStepPage extends BasePage {
+
     private PDXExcelReader pdxExcelReader;
     public static boolean stopNow = false;
     String username = System.getenv("PID");
     private static final String FILE_PATH = System.getProperty("user.home") + "/Desktop/StepValidCredentials.txt/";
     private String[] PDXProductIDS;
+
     public void clickonBuyerApprovalpage() throws InterruptedException, IOException {
         String password = NotepadReader.getDecodePassword(FILE_PATH);
 
@@ -57,6 +59,7 @@ public class ReworkInStepPage extends BasePage {
     }
 
     public void filterPDXid(String excelPath, String SheetName, int rowNUM, String columnHeader) throws InterruptedException, IOException {
+
         PDXExcelReader reader = new PDXExcelReader(excelPath, SheetName);
         int rowCount = reader.getRowCount();
         System.out.println("Row count from sheet '" + SheetName + "': " + rowCount);
@@ -85,7 +88,6 @@ public class ReworkInStepPage extends BasePage {
 
             // ✅ Add only once
             PDXProductIDs.add(PDXProductID);
-
         }
 
         reader.close();
@@ -99,7 +101,8 @@ public class ReworkInStepPage extends BasePage {
 
 
         String allIdsText = String.join(",", PDXProductIDs);
-// Open filter UI ONCE
+
+        // Open filter UI ONCE
         //  WebElement filterHeader = wait.until); // small pause if UI is sluggishWebElement filterHeader = wait.until(ExpectedConditions.elementToBeClickable(
         wait.until(ExpectedConditions.invisibilityOfElementLocated(By.id("waitScreenOverlayGlass")));
 
@@ -118,7 +121,7 @@ public class ReworkInStepPage extends BasePage {
         textArea.sendKeys(allIdsText);
 
 
-// (Optional) small pause if UI is sluggish
+        // (Optional) small pause if UI is sluggish
         Thread.sleep(2000);
 
 
@@ -127,7 +130,6 @@ public class ReworkInStepPage extends BasePage {
                 By.xpath("//button[.//span[normalize-space()='Apply filter']]")));
 
         // Wait until it's clickable
-
         if (applyBtn.isEnabled()) {
             wait.until(ExpectedConditions.elementToBeClickable(applyBtn));
             actions.moveToElement(applyBtn).click().perform();
@@ -138,11 +140,10 @@ public class ReworkInStepPage extends BasePage {
                     By.xpath("//table//tr//td")));
             Thread.sleep(2000);
 
-            if (rows.size() == 0) {
+            if (rows.isEmpty()) {
                 System.out.println("No results found after applying PDX Product IDs. Skipping further actions...");
 
             } else {
-
 
                 try {
                     WebElement selectAll = wait.until(ExpectedConditions.elementToBeClickable(
@@ -168,7 +169,8 @@ public class ReworkInStepPage extends BasePage {
             }
             System.out.println("Row count from sheet '" + SheetName + "': " + rowCount);
         }
-// Inside the for loop, before scrollToSeasonality()
+
+        // Inside the for loop, before scrollToSeasonality()
         if (!driver.findElements(By.xpath("//div[text()='Attribute Approval']")).isEmpty()) {
             System.out.println("✅ Attribute Approval page detected during Buyer Approval processing. Skipping remaining Buyer Approval actions.");
             return; // Exit loop, but continue with Asset Approval and Attribute Approval steps
@@ -201,13 +203,14 @@ public class ReworkInStepPage extends BasePage {
             System.out.println("Failed to double-click Proposal Status: " + e.getMessage());
         }
 
-        try{// Call your method
+        try{
+        // Call your method
         updateMessageToSupplier(excelPath, SheetName);
         System.out.println("✅ Message To Supplier update completed successfully!");
-    } catch (Exception e) {
+        } catch (Exception e) {
         System.err.println("❌ Error while updating Message To Supplier: " + e.getMessage());
         e.printStackTrace();
-    }
+        }
 
         try {
             // Call your method
@@ -245,12 +248,12 @@ public class ReworkInStepPage extends BasePage {
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(60));
         Actions ac = new Actions(driver);
 
-// Scroll to Proposal Status header
+        // Scroll to Proposal Status header
         WebElement proposalStatusHeader = wait.until(ExpectedConditions.elementToBeClickable(
                 By.xpath("(//span[@title='Proposal Status'])[1]")));
         ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", proposalStatusHeader);
 
-// Read Excel values
+        // Read Excel values
         PDXExcelReader read = new PDXExcelReader(excelPath, SheetName);
         int rowCount = read.getRowCount();
         System.out.println("Row count from sheet '" + SheetName + "': " + rowCount);
@@ -271,14 +274,14 @@ public class ReworkInStepPage extends BasePage {
             throw new RuntimeException("No Proposal Status values found in sheet: " + SheetName);
         }
 
-// Get all UI rows for Proposal Status column
+        // Get all UI rows for Proposal Status column
         List<WebElement> uiCells = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(
                 By.xpath("//td[@data-col='10']")));
 
         int processCount = Math.min(uiCells.size(), proposalStatusValues.size());
         System.out.println("Processing " + processCount + " rows...");
 
-// Iterate and update each row
+        // Iterate and update each row
         for (int i = 0; i < processCount; i++) {
             String excelValue = proposalStatusValues.get(i);
             WebElement targetCell = wait.until(ExpectedConditions.elementToBeClickable(
@@ -322,12 +325,10 @@ public class ReworkInStepPage extends BasePage {
         }
     }
 
-
     public void updateMessageToSupplier(String excelPath, String sheetName) throws Exception {
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
         Actions actions = new Actions(driver);
         JavascriptExecutor js = (JavascriptExecutor) driver;
-
 
         // Scroll slightly to bring column into view
         WebElement scrollable = driver.findElement(By.xpath("//div[contains(@class, 'sheet-scroll-container')]"));
@@ -340,23 +341,7 @@ public class ReworkInStepPage extends BasePage {
         Thread.sleep(2000);
 
         // Read Excel values
-        String messageColumn = "Message To Supplier"; // Excel header
-        PDXExcelReader read = new PDXExcelReader(excelPath, sheetName);
-        int rowCount = read.getRowCount();
-        List<String> messageValues = new ArrayList<>();
-
-        for (int i = 1; i <= rowCount; i++) {
-            String value = read.getCellValue(i, messageColumn);
-            if (value == null || value.trim().isEmpty() || value.trim().equalsIgnoreCase(messageColumn)) {
-                continue;
-            }
-            messageValues.add(value.trim());
-        }
-        read.close();
-
-        if (messageValues.isEmpty()) {
-            throw new RuntimeException("No Message To Supplier values found in sheet: " + sheetName);
-        }
+        List<String> messageValues = getStrings(excelPath, sheetName);
 
         // Get all UI cells for Message To Supplier column
         List<WebElement> uiCells = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(
@@ -416,10 +401,32 @@ public class ReworkInStepPage extends BasePage {
         }
     }
 
+    private static List<String> getStrings(String excelPath, String sheetName) throws IOException {
+        String messageColumn = "Message To Supplier"; // Excel header
+        PDXExcelReader read = new PDXExcelReader(excelPath, sheetName);
+        int rowCount = read.getRowCount();
+        List<String> messageValues = new ArrayList<>();
+
+        for (int i = 1; i <= rowCount; i++) {
+            String value = read.getCellValue(i, messageColumn);
+            if (value == null || value.trim().isEmpty() || value.trim().equalsIgnoreCase(messageColumn)) {
+                continue;
+            }
+            messageValues.add(value.trim());
+        }
+        read.close();
+
+        if (messageValues.isEmpty()) {
+            throw new RuntimeException("No Message To Supplier values found in sheet: " + sheetName);
+        }
+        return messageValues;
+    }
+
     public void updateReasonsForRework(String excelPath, String sheetName) throws Exception {
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
         JavascriptExecutor js = (JavascriptExecutor) driver;
-Actions actions=new Actions(driver);
+        Actions actions=new Actions(driver);
+
         // Scroll slightly to bring column into view
         WebElement scrollable = driver.findElement(By.xpath("//div[contains(@class, 'sheet-scroll-container')]"));
         js.executeScript("arguments[0].scrollLeft += 200;", scrollable);
@@ -531,8 +538,8 @@ public void click_masterdata(String excelPath, String SheetName, int rowNUM, Str
     clickElement(ElementLocators.MASTER_DATA_ICON_XPATH);
     System.out.println("MASTER_DATA_ICON clicked");
     Thread.sleep(5000);
-    waitForElementVisible(ElementLocators.FILTER_BUTTON_XPATH);
-    clickElement(ElementLocators.FILTER_BUTTON_XPATH);
+    waitForElementVisible(ElementLocators.FILTER_ICON_XPATH);
+    clickElement(ElementLocators.FILTER_ICON_XPATH);
 
     // Read Excel
     PDXExcelReader reader = new PDXExcelReader(excelPath, SheetName);
@@ -576,8 +583,8 @@ public void click_masterdata(String excelPath, String SheetName, int rowNUM, Str
     availableinchanel.click();
     Thread.sleep(2000);
 
-    waitForElementVisible(ElementLocators.PRODUCT_LIFECYCLE_DATES_DROPDOWN_XPATH);
-    clickElement(ElementLocators.PRODUCT_LIFECYCLE_DATES_DROPDOWN_XPATH);
+    waitForElementVisible(ElementLocators.PRODUCT_LIFECYCLE_DATES_XPATH);
+    clickElement(ElementLocators.PRODUCT_LIFECYCLE_DATES_XPATH);
 
     waitForElementVisible(ElementLocators.START_DATE_XPATH);
     clickElement(ElementLocators.START_DATE_XPATH);
@@ -592,16 +599,16 @@ public void click_masterdata(String excelPath, String SheetName, int rowNUM, Str
     waitForElementVisible(ElementLocators.APPLY_BUTTON_XPATH1);
     clickElement(ElementLocators.APPLY_BUTTON_XPATH1);
     Thread.sleep(10000);
-    waitForElementVisible(ElementLocators.FILTER_BUTTON_XPATH);
-    clickElement(ElementLocators.FILTER_BUTTON_XPATH);
+    waitForElementVisible(ElementLocators.FILTER_ICON_XPATH);
+    clickElement(ElementLocators.FILTER_ICON_XPATH);
     WebElement clearfilter = wait.until(ExpectedConditions.elementToBeClickable
             (By.xpath("//span[text()='Clear filters']")));
     clearfilter.click();
     Thread.sleep(3000);
-    waitForElementVisible(ElementLocators.FILTER_BUTTON_XPATH);
-    clickElement(ElementLocators.FILTER_BUTTON_XPATH);
-    waitForElementVisible(ElementLocators.PRODUCT_LIFECYCLE_DATES_DROPDOWN_XPATH);
-    clickElement(ElementLocators.PRODUCT_LIFECYCLE_DATES_DROPDOWN_XPATH);
+    waitForElementVisible(ElementLocators.FILTER_ICON_XPATH);
+    clickElement(ElementLocators.FILTER_ICON_XPATH);
+    waitForElementVisible(ElementLocators.PRODUCT_LIFECYCLE_DATES_XPATH);
+    clickElement(ElementLocators.PRODUCT_LIFECYCLE_DATES_XPATH);
 
     waitForElementVisible(ElementLocators.START_DATE_XPATH);
     clickElement(ElementLocators.START_DATE_XPATH);

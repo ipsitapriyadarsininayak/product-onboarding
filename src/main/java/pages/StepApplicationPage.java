@@ -1,45 +1,37 @@
 package pages;
 
 import constants.ElementLocators;
-import jdk.jshell.spi.ExecutionControl;
 import org.openqa.selenium.*;
-import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import utils.NotepadReader;
+import utils.ConfigFileReader;
 import utils.PDXExcelReader;
+
 import java.awt.*;
-import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
 import java.util.List;
 
+import static constants.ElementLocators.*;
 
 
 public class StepApplicationPage extends BasePage {
-    private PDXExcelReader pdxExcelReader;
-    public static boolean stopNow = false;
 
-
-    String username = System.getenv("PID");
-    private static final String FILE_PATH = System.getProperty("user.home") + "/Desktop/StepValidCredentials.txt/";
-    private String[] PDXProductIDS;
+    String username_step = ConfigFileReader.get("PID");
+    String password_step = ConfigFileReader.get("password_step");
 
 
     public void stepLogin() throws IOException, InterruptedException {
-        String password = NotepadReader.getDecodePassword(FILE_PATH);
 
         waitForElementVisible(ElementLocators.STEP_USERNAME_INPUT_XPATH);
-        enterText(ElementLocators.STEP_USERNAME_INPUT_XPATH, username);
+        enterText(ElementLocators.STEP_USERNAME_INPUT_XPATH, username_step);
         waitForElementVisible(ElementLocators.STEP_PASSWORD_INPUT_XPATH);
-        enterText(ElementLocators.STEP_PASSWORD_INPUT_XPATH, password);
+        enterText(ElementLocators.STEP_PASSWORD_INPUT_XPATH, password_step);
         Thread.sleep(5000);
         waitForElementVisible(ElementLocators.STEP_LOGIN_BUTTON_XPATH);
         clickElement(ElementLocators.STEP_LOGIN_BUTTON_XPATH);
-
     }
 
     public void clickOnBuyersApproval() throws InterruptedException {
@@ -49,14 +41,12 @@ public class StepApplicationPage extends BasePage {
         Thread.sleep(6000);
         waitForElementVisible(ElementLocators.BUYERS_APPROVAL_LINK_XPATH);
         clickElement(ElementLocators.BUYERS_APPROVAL_LINK_XPATH);
-
     }
 
     public void clickOnDateFirstSubmittedByBrand() throws InterruptedException {
         Thread.sleep(5000);
         waitForElementVisible(ElementLocators.DATE_FIRST_SUBMITTED_BY_BRAND_XPATH);
         clickElement(ElementLocators.DATE_FIRST_SUBMITTED_BY_BRAND_XPATH);
-
     }
 
     public void filterDateToDescendingOrder() throws InterruptedException {
@@ -64,11 +54,10 @@ public class StepApplicationPage extends BasePage {
         clickElement(ElementLocators.FILTER_DATE_TO_DESCENDING_XPATH);
         ((JavascriptExecutor) driver).executeScript("document.body.style.zoom='80%'");
         Thread.sleep(3000);
-
     }
 
-
     public void checkProductIdImported(String excelPath, String SheetName, int rowNUM, String columnHeader) throws IOException, InterruptedException, AWTException {
+
         PDXExcelReader reader = new PDXExcelReader(excelPath, SheetName);
         int rowCount = reader.getRowCount();
         System.out.println("Row count from sheet '" + SheetName + "': " + rowCount);
@@ -88,8 +77,7 @@ public class StepApplicationPage extends BasePage {
                 PDXProductID = reader.getCellValue(i, columnHeader); // default logic
             }
 
-            if (PDXProductID == null
-                    || PDXProductID.isEmpty()
+            if (PDXProductID == null || PDXProductID.isEmpty()
                     || PDXProductID.equalsIgnoreCase(columnHeader)) {
                 // skip blanks or accidental header rows
                 continue;
@@ -97,11 +85,11 @@ public class StepApplicationPage extends BasePage {
 
             // ✅ Add only once
             PDXProductIDs.add(PDXProductID);
-
         }
-
         reader.close();
+
         PDXProductIDs = PDXProductIDs.stream().distinct().toList();
+
         // Optional: log or assert
         if (PDXProductIDs.isEmpty()) {
             throw new RuntimeException("No PDX Product IDs found in Excel column: " + columnHeader +
@@ -109,56 +97,50 @@ public class StepApplicationPage extends BasePage {
         }
         System.out.println("✅ Loaded " + PDXProductIDs.size() + " PDX Product IDs from Excel.");
 
+        String allProductIdsText = String.join(",", PDXProductIDs);
 
-        String allIdsText = String.join(",", PDXProductIDs);
-// Open filter UI ONCE
-        //  WebElement filterHeader = wait.until); // small pause if UI is sluggishWebElement filterHeader = wait.until(ExpectedConditions.elementToBeClickable(
+        // Open filter UI ONCE
         wait.until(ExpectedConditions.invisibilityOfElementLocated(By.id("waitScreenOverlayGlass")));
 
         // Open filter UI
         WebElement filterHeader = wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath("//th//span[@title='PDX Product ID']")));
+                By.xpath(PDX_PRODUCT_ID_HEADER_XPATH)));
         filterHeader.click();
         Thread.sleep(2000);
         WebElement filter = wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath("//select[contains(@class, 'sortOptionsListBox')]//option[@value='Include only']")));
+                By.xpath(FILTER_BY_INCLUDE_ONLY_XPATH)));
         filter.click();
         Thread.sleep(2000);
         WebElement textArea = wait.until(ExpectedConditions.visibilityOfElementLocated(
-                By.xpath("//textarea[@placeholder='Value or text']")));
+                By.xpath(FILTER_TEXTBOX_XPATH)));
         textArea.clear();
-        textArea.sendKeys( allIdsText);
+        textArea.sendKeys(allProductIdsText);
 
-
-// (Optional) small pause if UI is sluggish
+        // (Optional) small pause if UI is sluggish
         Thread.sleep(2000);
-
 
         // Re-locate Apply button after entering product ID
         WebElement applyBtn = wait.until(ExpectedConditions.presenceOfElementLocated(
-                By.xpath("//button[.//span[normalize-space()='Apply filter']]")));
+                By.xpath(APPLY_FILTER_BUTTON_XPATH)));
 
         // Wait until it's clickable
-
         if (applyBtn.isEnabled()) {
             wait.until(ExpectedConditions.elementToBeClickable(applyBtn));
             actions.moveToElement(applyBtn).click().perform();
-            System.out.println("Clicked Apply filter for Product ID: " + allIdsText);
-            Thread.sleep(10000);
+            System.out.println("Clicked Apply filter for Product ID: " + allProductIdsText);
+            Thread.sleep(5000);
 
             List<WebElement> rows = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(
                     By.xpath("//table//tr//td")));
             Thread.sleep(2000);
 
-            if (rows.size() == 0) {
+            if (rows.isEmpty()) {
                 System.out.println("No results found after applying PDX Product IDs. Skipping further actions...");
-
             } else {
-
 
                 try {
                     WebElement selectAll = wait.until(ExpectedConditions.elementToBeClickable(
-                            By.xpath("//div[text()='Select All']")));
+                            By.xpath(SELECT_ALL_BUTTON_XPATH)));
                     selectAll.click();
                     System.out.println("Selected all rows after filtering PDX Product IDs list.");
                 } catch (Exception e) {
@@ -171,7 +153,7 @@ public class StepApplicationPage extends BasePage {
             System.out.println("Apply filter is disabled after entering PDX Product IDs. Clicking navbar logo...");
             try {
                 WebElement navbarLogo = wait.until(ExpectedConditions.elementToBeClickable(
-                        By.xpath("//div[@id='stibo-element-navbar-logo']")));
+                        By.xpath(M_AND_S_LOGO_HOME_XPATH)));
                 navbarLogo.click();
                 Thread.sleep(2000);
             } catch (Exception e) {
@@ -179,17 +161,16 @@ public class StepApplicationPage extends BasePage {
             }
             System.out.println("Row count from sheet '" + SheetName + "': " + rowCount);
         }
-// Inside the for loop, before scrollToSeasonality()
+
+        // Inside the for loop, before scrollToSeasonality()
         if (!driver.findElements(By.xpath("//div[text()='Attribute Approval']")).isEmpty()) {
             System.out.println("✅ Attribute Approval page detected during Buyer Approval processing. Skipping remaining Buyer Approval actions.");
             return; // Exit loop, but continue with Asset Approval and Attribute Approval steps
         }
 
-
-
-
         try {
             if (!driver.findElements(By.xpath("//span[@title='Seasonality']")).isEmpty()) {
+                // Method to scroll to Seasonality column
                 scrollToSeasonality();
             } else {
                 System.out.println("Seasonality check after applying " + PDXProductIDs.size() + " PDX IDs.");
@@ -199,17 +180,16 @@ public class StepApplicationPage extends BasePage {
         }
 
         try {
-            int rowNum = 1;
-            doubleClickTextField(excelPath, SheetName, 1, "Core/Newness");
+            // Method to insert Core/Newness values
+            doubleClickTextField(excelPath, SheetName, "Core/Newness");
         } catch (Exception e) {
             System.out.println("Failed to double-click Core/Newness: " + e.getMessage());
         }
 
-
         try {
             JavascriptExecutor js = (JavascriptExecutor) driver;
             js.executeScript("document.body.style.zoom='75%'"); // Adjust percentage as needed
-            ScrollableContainer(excelPath, SheetName, 1, "Parent Node Lists", "PRODUCT TYPE Â© (External Merch Category) ");
+            ScrollableContainer(excelPath, SheetName, "Parent Node Lists", "PRODUCT TYPE Â© (External Merch Category) ");
 
         } catch (Exception e) {
             System.out.println("Failed to scroll container: " + e.getMessage());
@@ -267,12 +247,8 @@ public class StepApplicationPage extends BasePage {
             System.out.println("⚠️ Some Buyer Approval products were skipped or failed. Proceeding to Asset Approval...");
         }
 
-// Simulate click anywhere to dismiss overlay
-        actions.moveByOffset(10,10).
-
-                click().
-
-                perform();
+        // Simulate click anywhere to dismiss overlay
+        actions.moveByOffset(10,10).click().perform();
         Thread.sleep(5000);
 
         try {
@@ -334,10 +310,12 @@ public class StepApplicationPage extends BasePage {
     }
 
     public void scrollToSeasonality() throws InterruptedException {
+
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
         //Thread.sleep(2000);
 
-        WebElement scrollableDiv = driver.findElement(By.xpath("//div[contains(@class, 'sheet-scroll-container')]"));
+        WebElement scrollableDiv = driver.findElement(By.xpath(
+                "//div[@class='sheet-scroll-container' and .//div[contains(@class,'sheet-scroll-size-element')]]"));
         JavascriptExecutor js = (JavascriptExecutor) driver;
         js.executeScript("arguments[0].scrollLeft = arguments[0].scrollWidth;", scrollableDiv);
         Thread.sleep(5000);
@@ -366,16 +344,12 @@ public class StepApplicationPage extends BasePage {
 
     }*/
 
-
-
-
-    public void doubleClickTextField(String excelPath, String SheetName, int rowNum, String columnHeader)
-            throws InterruptedException, AWTException, IOException {
+    public void doubleClickTextField(String excelPath, String SheetName, String columnHeader) throws InterruptedException, IOException {
 
         Actions ac = new Actions(driver);
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(80));
         JavascriptExecutor js = (JavascriptExecutor) driver;
-        // Scroll to Core/Newness header
+
         WebElement corenewnessHeader = wait.until(ExpectedConditions.elementToBeClickable(
                 By.xpath("(//span[@title='Core / Newness'])[1]")));
         ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", corenewnessHeader);
@@ -400,14 +374,15 @@ public class StepApplicationPage extends BasePage {
             throw new RuntimeException("No Core/Newness values found in sheet: " + SheetName);
         }
 
-        List<WebElement> uiCells = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(
+        List<WebElement> uiCoreNewnessCells = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(
                 By.xpath("//td[@data-col='20']")));
 
-        int processCount = Math.min(uiCells.size(), corenewnessValues.size());
+        int processCount = Math.min(uiCoreNewnessCells.size(), corenewnessValues.size());
         System.out.println("Processing " + processCount + " rows...");
 
-// Iterate and update each row
+        // Iterate and update each row
         for (int i = 0; i < processCount; i++) {
+
             String excelValue = corenewnessValues.get(i);
 
             WebElement targetCell = wait.until(ExpectedConditions.elementToBeClickable(
@@ -421,8 +396,10 @@ public class StepApplicationPage extends BasePage {
             }
             ac.sendKeys(Keys.ENTER).perform();
             Thread.sleep(800);
+            System.out.println("✅ Value committed successfully for Core/Newness column");
 
             // Optional overlay/editor wait (non-blocking if not present)
+            /*
             By overlayPanel = By.cssSelector("div.sheet-edit-mode-editor-overlay-panel");
             WebElement editorPanel = null;
             try {
@@ -454,11 +431,10 @@ public class StepApplicationPage extends BasePage {
                         activeEditor
                 );
 
-
                 activeEditor = (WebElement) ((JavascriptExecutor) driver).executeScript("return document.activeElement;");
             }
 
-// Type into the current editor (this may have triggered the modal already; we will ESC if so)
+            // Type into the current editor (this may have triggered the modal already; we will ESC if so)
             ac.click(activeEditor)
                     .keyDown(Keys.CONTROL).sendKeys("a").keyUp(Keys.CONTROL)
                     .sendKeys(Keys.DELETE)
@@ -471,9 +447,7 @@ public class StepApplicationPage extends BasePage {
                     activeEditor
             );
 
-
             //ac.pause(Duration.ofMillis(200)).sendKeys(Keys.TAB).pause(Duration.ofMillis(180)).perform();
-
             String typedValue = (String) ((JavascriptExecutor) driver)
                     .executeScript("return ('value' in arguments[0]) ? arguments[0].value : arguments[0].textContent;", activeEditor);
 
@@ -511,7 +485,6 @@ public class StepApplicationPage extends BasePage {
                     Thread.sleep(10000);
 
                     // 3️⃣ Wait until Save becomes enabled (not just clickable)
-
                     wait.until(ExpectedConditions.elementToBeClickable(
                             By.xpath("//div[contains(@class,'modal') or @role='dialog']//button[normalize-space()='Save']")
                     )).click();
@@ -523,18 +496,19 @@ public class StepApplicationPage extends BasePage {
 
                     Thread.sleep(500);
                 }
-
-
                 System.out.println("✅ Value committed successfully");
             } else {
                 System.out.println("❌ Value mismatch – not committing");
                 Thread.sleep(500);
                 ac.moveByOffset(50, 50).click().perform();
                 Thread.sleep(1000);
-            }}}
+            } */
+        }
+    }
 
 
-    public void ScrollableContainer(String excelPath, String SheetName, int rowNum, String columnHeader, String columnHeader1) throws Exception {
+    public void ScrollableContainer(String excelPath, String SheetName, String columnHeader, String columnHeader1) throws Exception {
+
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
         Actions actions = new Actions(driver);
 

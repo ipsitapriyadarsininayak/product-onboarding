@@ -1,34 +1,21 @@
-package stepdefinitions;
+package stepDefinitions;
 
 import constants.ElementLocators;
-import hooks.Hooks;
-import io.cucumber.java.Before;
-import io.cucumber.java.Scenario;
 import io.cucumber.java.en.And;
-import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 //import org.junit.Assume;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.Assert;
-import org.testng.SkipException;
 import pages.BasePage;
 import pages.PdxHomePage;
+import pages.PdxMasterPage;
 import utils.ConfigFileReader;
-import utils.ExcelSheetSelector;
-import utils.PDXExcelReader;
 
 import java.awt.*;
 import java.io.IOException;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Map;
 
 public class PdxStiboHomeSteps extends BasePage {
     PdxHomePage pdxhomepage;
+    PdxMasterPage pdxMasterPage;
    /* private Scenario scenario;
     @Before
     public void captureScenario(Scenario scenario) {
@@ -45,8 +32,10 @@ public class PdxStiboHomeSteps extends BasePage {
 
     @And("User click Master data")
     public void user_click_master_data() throws InterruptedException {
-        pdxhomepage.click_Master_Data();
-        pdxhomepage.waitForElementVisible(ElementLocators.MASTER_DATA_CHANNEL_HEADER_XPATH);
+
+        pdxMasterPage = new PdxMasterPage();
+        pdxMasterPage.click_Master_Data();
+        pdxMasterPage.waitForElementVisible(ElementLocators.MASTER_DATA_CHANNEL_HEADER_XPATH);
         String actualText = BasePage.getElementText(ElementLocators.MASTER_DATA_CHANNEL_HEADER_XPATH);
         System.out.println("actualText===>" + actualText);
         Assert.assertEquals(actualText, "Master data - List view", "Master data page did not loaded fully");
@@ -77,13 +66,13 @@ public class PdxStiboHomeSteps extends BasePage {
     @And("User Upload Image for products from {string}")
     public void userUploadImageForProducts(String SheetName) throws IOException, InterruptedException, AWTException, Exception {
 
-        String excelpath = System.getenv("EXCEL_PATH2");
+        String excelPath = ConfigFileReader.get("excelPath");
 
-        if (excelpath == null || excelpath.isEmpty()) {
+        if (excelPath == null || excelPath.isEmpty()) {
             throw new IllegalArgumentException("Environment variable EXCEL_PATH2 is not set.");
         }
 
-        System.out.println("Excel path from config: " + excelpath);
+        System.out.println("Excel path from config: " + excelPath);
 
 
         // ✅ Get sheet name based on scenario tag
@@ -92,7 +81,7 @@ public class PdxStiboHomeSteps extends BasePage {
         //String columnHeader = "ID";
         int rowNum = 1;
 
-        pdxhomepage.UploadImageFromExcelRow(excelpath, SheetName, imgColumn);
+        pdxhomepage.UploadImageFromExcelRow(excelPath, SheetName, imgColumn);
 
         System.out.println("🎯 TEST PASSED (forced pass for demo)");
 

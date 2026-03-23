@@ -15,7 +15,7 @@ import java.util.Objects;
 
 public class BasePage {
     protected static WebDriver driver;
-    private final int TIMEOUT = 80; //SECONDS
+    private static final int TIMEOUT = 80; //SECONDS
 
     public BasePage() {
 
@@ -37,7 +37,7 @@ public class BasePage {
 
 
 
-    protected void clickElement(String xpath){
+    protected static void clickElement(String xpath){
         driver.findElement(By.xpath(xpath)).click();
     }
 
@@ -45,7 +45,7 @@ public class BasePage {
         return driver.findElement(By.xpath(xpath)).getText();
     }
 
-    public void waitForElementVisible(String xpath){
+    public static void waitForElementVisible(String xpath){
         new WebDriverWait(driver, Duration.ofSeconds(TIMEOUT)).until(
                 ExpectedConditions.visibilityOfElementLocated(By.xpath(xpath)));
     }

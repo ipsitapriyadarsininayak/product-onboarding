@@ -1,12 +1,9 @@
-package stepdefinitions;
+package stepDefinitions;
 
 import constants.ElementLocators;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.testng.Assert;
 import pages.BasePage;
 import pages.ReworkPDXHomePage;

@@ -1,5 +1,7 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.pdx</groupId>
@@ -12,154 +14,192 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+    <!-- Versions -->
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
-    <!-- Plugin versions -->
-    <maven.surefire.plugin.version>3.0.0-M9</maven.surefire.plugin.version>
-    <maven.cucumber.reporting.version>5.7.0</maven.cucumber.reporting.version>
+    <cucumber.version>7.20.1</cucumber.version>
+    <testng.version>7.9.0</testng.version>
+    <selenium.version>4.29.0</selenium.version>
+    <wdm.version>6.3.2</wdm.version>
+    <poi.version>5.4.0</poi.version>
+    <opencsv.version>5.7.1</opencsv.version>
+    <commons.csv.version>1.10.0</commons.csv.version>
+    <slf4j.version>2.0.9</slf4j.version>
+    <lombok.version>1.18.30</lombok.version>
+    <masterthought.version>5.7.0</masterthought.version>
+    <extent.version>5.0.9</extent.version>
+    <extent.adapter.version>1.14.0</extent.adapter.version>
+
+    <!-- Plugins -->
+    <maven.surefire.version>3.1.0</maven.surefire.version>
   </properties>
 
-
   <dependencies>
-    <!--  Cucumber dependencies  -->
-    <!--  https://mvnrepository.com/artifact/io.cucumber/cucumber-java  -->
+
+    <!-- ✅ Cucumber 7 + TestNG (NO JUnit) -->
     <dependency>
       <groupId>io.cucumber</groupId>
       <artifactId>cucumber-java</artifactId>
-      <version>7.20.1</version>
+      <version>${cucumber.version}</version>
     </dependency>
-    <!--  https://mvnrepository.com/artifact/io.cucumber/cucumber-testng  -->
+
     <dependency>
       <groupId>io.cucumber</groupId>
       <artifactId>cucumber-testng</artifactId>
-      <version>7.20.1</version>
-    </dependency>
-    <!-- https://mvnrepository.com/artifact/io.cucumber/cucumber-junit -->
-    <dependency>
-      <groupId>io.cucumber</groupId>
-      <artifactId>cucumber-junit</artifactId>
-      <version>7.20.1</version>
-      <scope>test</scope>
+      <version>${cucumber.version}</version>
     </dependency>
 
-    <!--  Selenium dependencies  -->
-    <!--  https://mvnrepository.com/artifact/org.seleniumhq.selenium/selenium-java  -->
-    <dependency>
-      <groupId>org.seleniumhq.selenium</groupId>
-      <artifactId>selenium-java</artifactId>
-      <version>4.29.0</version>
-    </dependency>
-    <!--  WebDriverManager  -->
-    <!--  https://mvnrepository.com/artifact/io.github.bonigarcia/webdrivermanager  -->
-    <dependency>
-      <groupId>io.github.bonigarcia</groupId>
-      <artifactId>webdrivermanager</artifactId>
-      <version>6.3.2</version>
-    </dependency>
-    <!--  TestNG  -->
-    <!--  https://mvnrepository.com/artifact/org.testng/testng  -->
+    <!-- ✅ TestNG -->
     <dependency>
       <groupId>org.testng</groupId>
       <artifactId>testng</artifactId>
-      <version>7.9.0</version>
+      <version>${testng.version}</version>
       <scope>test</scope>
     </dependency>
+
+    <!-- ✅ Selenium -->
+    <dependency>
+      <groupId>org.seleniumhq.selenium</groupId>
+      <artifactId>selenium-java</artifactId>
+      <version>${selenium.version}</version>
+    </dependency>
+
+    <!-- ✅ WebDriverManager -->
+    <dependency>
+      <groupId>io.github.bonigarcia</groupId>
+      <artifactId>webdrivermanager</artifactId>
+      <version>${wdm.version}</version>
+    </dependency>
+
+    <!-- ✅ CSV & Excel -->
     <dependency>
       <groupId>com.opencsv</groupId>
       <artifactId>opencsv</artifactId>
-      <version>5.7.1</version>
+      <version>${opencsv.version}</version>
     </dependency>
+
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-csv</artifactId>
-      <version>1.10.0</version>
+      <version>${commons.csv.version}</version>
     </dependency>
 
-    <!--  Apache POI Core  -->
-    <!-- https://mvnrepository.com/artifact/org.apache.poi/poi -->
     <dependency>
       <groupId>org.apache.poi</groupId>
       <artifactId>poi</artifactId>
-      <version>5.4.0</version>
+      <version>${poi.version}</version>
     </dependency>
 
-    <!--  Apache POI For XLSX(OOXML) format  -->
-    <!-- https://mvnrepository.com/artifact/org.apache.poi/poi-ooxml -->
     <dependency>
       <groupId>org.apache.poi</groupId>
       <artifactId>poi-ooxml</artifactId>
-      <version>5.4.0</version>
+      <version>${poi.version}</version>
     </dependency>
 
+    <!-- ✅ Masterthought Cucumber Reporting (donut chart) -->
     <dependency>
       <groupId>net.masterthought</groupId>
       <artifactId>cucumber-reporting</artifactId>
       <version>5.7.0</version>
     </dependency>
+
+    <!-- ✅ Extent + Cucumber 7 adapter -->
     <dependency>
       <groupId>com.aventstack</groupId>
       <artifactId>extentreports</artifactId>
-      <version>5.0.9</version> <!-- Use the latest version -->
+      <version>${extent.version}</version>
     </dependency>
+
     <dependency>
       <groupId>tech.grasshopper</groupId>
       <artifactId>extentreports-cucumber7-adapter</artifactId>
-      <version>1.14.0</version> <!-- Match your Cucumber version -->
+      <version>${extent.adapter.version}</version>
     </dependency>
+
+    <!-- ✅ Logging -->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>
-      <version>2.0.9</version>
+      <version>${slf4j.version}</version>
     </dependency>
+
+    <!-- ✅ Lombok -->
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
-      <version>1.18.30</version> <!-- Use latest -->
+      <version>${lombok.version}</version>
       <scope>provided</scope>
     </dependency>
 
-    <dependency>
-      <groupId>com.google.protobuf</groupId>
-      <artifactId>protobuf-java</artifactId>
-      <version>3.21.12</version>
-    </dependency>
-
-    <dependency>
-      <groupId>io.cucumber</groupId>
-      <artifactId>cucumber-junit-platform-engine</artifactId>
-      <version>7.14.0</version>
-    </dependency>
-
-    <!-- JUnit 5 -->
-    <dependency>
-      <groupId>org.junit.platform</groupId>
-      <artifactId>junit-platform-suite</artifactId>
-      <version>1.10.0</version>
-    </dependency>
-
   </dependencies>
+
   <build>
     <plugins>
-      <!-- Surefire Plugin -->
+
+      <!-- ✅ Java 17 compiler (explicit) -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.12.1</version>
+        <configuration>
+          <source>${maven.compiler.source}</source>
+          <target>${maven.compiler.target}</target>
+        </configuration>
+      </plugin>
+
+      <!-- ✅ Surefire (TestNG runner) -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.1.0</version> <!-- or latest stable -->
-        <configuration>
+        <version>3.1.0</version>
 
+        <configuration>
           <systemPropertyVariables>
             <cucumber.options>--plugin json:target/cucumber-reports.json</cucumber.options>
           </systemPropertyVariables>
+          <includes>
+            <include>**/TestRunner.java</include>
+          </includes>
 
+          <testNGArtifactName>org.testng:testng</testNGArtifactName>
+
+          <suiteXmlFiles>
+            <suiteXmlFile>src/test/resources/testng.xml</suiteXmlFile>
+          </suiteXmlFiles>
+
+          <skipTests>false</skipTests>
           <testFailureIgnore>true</testFailureIgnore>
+          <reuseForks>false</reuseForks>
         </configuration>
 
+        <!-- ✅ Force tests to run before verify -->
+        <executions>
+          <execution>
+            <id>run-tests-test-phase</id>
+            <phase>test</phase>
+            <goals>
+              <goal>test</goal>
+            </goals>
+          </execution>
+
+          <execution>
+            <id>run-tests-verify-phase</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>test</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
+
+      <!-- ✅ Masterthought HTML Report (reads the JSON from Cucumber) -->
 
       <plugin>
         <groupId>net.masterthought</groupId>
         <artifactId>maven-cucumber-reporting</artifactId>
         <version>5.7.0</version>
+
         <executions>
           <execution>
             <id>generate-cucumber-reports</id>
@@ -167,46 +207,26 @@
             <goals>
               <goal>generate</goal>
             </goals>
+
             <configuration>
+              <projectName>Product-Onboarding</projectName>
               <jsonFiles>
                 <param>**/*.json</param>
               </jsonFiles>
+
+              <!-- ✅ Output directory -->
               <outputDirectory>${project.build.directory}/cucumber-reports</outputDirectory>
+              <!-- ✅ Input directory -->
               <inputDirectory>${project.build.directory}/cucumber-reports</inputDirectory>
+
               <checkBuildResult>false</checkBuildResult>
             </configuration>
+
           </execution>
         </executions>
       </plugin>
-      <!-- <plugin>
 
-        <groupId>net.masterthought</groupId>
-        <artifactId>maven-cucumber-reporting</artifactId>
-        <version>5.7.0</version>
-        <executions>
-          <execution>
-            <id>generate-cucumber-html-reports</id>
-            <phase>verify</phase>
-            <goals>
-              <goal>generate</goal>
-            </goals>
-            <configuration>
-              <projectName>PDXOnboarding</projectName>
-              <outputDirectory>${project.build.directory}/cucumber-reports</outputDirectory>
-              <jsonFiles>
-                <param>${project.build.directory}/cucumber-reports/cucumber.json</param>
-              </jsonFiles>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin> -->
-      <!-- Cucumber Reporting Plugin -->
 
     </plugins>
   </build>
-
 </project>
-
-
-
-

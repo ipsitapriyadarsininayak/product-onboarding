@@ -1,4 +1,4 @@
-package stepdefinitions;
+package stepDefinitions;
 
 import hooks.Hooks;
 import io.cucumber.java.en.And;
@@ -6,7 +6,6 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import pages.BasePage;
 import pages.ReworkInStepPage;
-import pages.StepApplicationPage;
 import utils.ConfigFileReader;
 
 import java.io.IOException;
@@ -66,8 +65,6 @@ public class ReworkInStep extends BasePage {
     @And("click on menu to submit the event")
     public void clickOnMenuToSubmitTheEvent() {
     }
-
-
 }
 
 

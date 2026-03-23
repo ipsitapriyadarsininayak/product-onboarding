@@ -8,10 +8,8 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import utils.NotepadReader;
 import utils.PDXExcelReader;
 
-import java.awt.*;
 import java.io.IOException;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -72,8 +70,8 @@ Thread.sleep(5000);
         );
         familyProducts.click();
         Thread.sleep(2000);
-        waitForElementVisible(ElementLocators.FILTER_BUTTON_XPATH);
-        clickElement(ElementLocators.FILTER_BUTTON_XPATH);
+        waitForElementVisible(ElementLocators.FILTER_ICON_XPATH);
+        clickElement(ElementLocators.FILTER_ICON_XPATH);
 
 
 // Click on "List of values"

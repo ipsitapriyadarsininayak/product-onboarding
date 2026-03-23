@@ -1,4 +1,4 @@
-package stepdefinitions;
+package stepDefinitions;
 
 import constants.ElementLocators;
 import hooks.Hooks;
@@ -19,18 +19,12 @@ import java.awt.*;
 import java.io.IOException;
 import java.time.Duration;
 
-
-
-
 public class StepApplicationSteps extends BasePage {
 
     StepApplicationPage stepApplicationPage = new StepApplicationPage();
-    private Object ProductID;
-
 
     @When("User navigate to Step application")
     public void user_navigate_to_step_application() throws InterruptedException {
-//        stepApplicationPage = new StepApplicationPage();
         driver.get(ConfigFileReader.get("StepBrandsOnboardingUrl"));
         Thread.sleep(5000);
     }
@@ -60,7 +54,6 @@ public class StepApplicationSteps extends BasePage {
         String actualText = getElementText(ElementLocators.BUYERS_APPROVAL_HEADER_XPATH);
         System.out.println("BUYER APPROVAL HEADER Text===>" + actualText);
         Assert.assertTrue(actualText.contains("Buyer Approval"));
-
     }
 
     @When("User click on Date First Submitted by Brand")
@@ -76,17 +69,11 @@ public class StepApplicationSteps extends BasePage {
     @And("User check the {string} imported to step")
     public void userCheckTheImportedToStep(String SheetName) throws InterruptedException, IOException, AWTException {
 
-
-        String excelPath = System.getenv("EXCEL_PATH2");
-
         int rowNum = 1;
+        String excelPath = ConfigFileReader.get("excelPath");
         String columnHeader = "PDX Product ID";
 
         stepApplicationPage.checkProductIdImported(excelPath, SheetName, rowNum, columnHeader);
-        //System.out.println("✅ Test completed successfully. All steps passed.");
-
-        // System.out.println("🎯 TEST PASSED (forced pass for demo)");
-        // Assert.assertTrue(true,"Test completed successfully");
         System.out.println("✅ Test completed successfully. Stopping further steps...");
         Hooks.stopScenario = true; //
         if (Hooks.stopScenario) {
@@ -166,10 +153,10 @@ public class StepApplicationSteps extends BasePage {
 
             // Wait for the element to be clickable
             WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(5));
-            wait.until(ExpectedConditions.elementToBeClickable(By.xpath(ElementLocators.Assetapproval_XPATH)));
+            wait.until(ExpectedConditions.elementToBeClickable(By.xpath(ElementLocators.ASSET_APPROVAL_LINK_XPATH)));
 
             // Click using JavaScript
-           // stepApplicationPage.clickOnElementUsingJS(By.xpath(ElementLocators.Assetapproval_XPATH));
+           // stepApplicationPage.clickOnElementUsingJS(By.xpath(ElementLocators.ASSET_APPROVAL_LINK_XPATH));
 
             System.out.println("Successfully clicked on Asset Approval.");
         } catch (Exception e) {
@@ -207,10 +194,10 @@ public class StepApplicationSteps extends BasePage {
 
             // Wait for the element to be clickable
             WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-            wait.until(ExpectedConditions.elementToBeClickable(By.xpath(ElementLocators.AttributeApproval_XPATH)));
+            wait.until(ExpectedConditions.elementToBeClickable(By.xpath(ElementLocators.ATTRIBUTE_APPROVAL_LINK_XPATH)));
 
             // Click using JavaScript
-           // stepApplicationPage.clickOnElementUsingJS1(By.xpath(ElementLocators.AttributeApproval_XPATH));
+           // stepApplicationPage.clickOnElementUsingJS1(By.xpath(ElementLocators.ATTRIBUTE_APPROVAL_LINK_XPATH));
 
             System.out.println("Successfully clicked on Attribute Approval.");
         } catch (Exception e) {

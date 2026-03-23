@@ -1,21 +1,19 @@
 package pages;
-import com.aventstack.extentreports.util.Assert;
+
 import constants.ElementLocators;
 import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import org.opentest4j.TestSkippedException;
+import utils.ConfigFileReader;
 import utils.PDXExcelReader;
-import java.io.File;
 
 import java.awt.*;
-import java.io.FileInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
 import java.util.List;
-
 import java.util.NoSuchElementException;
 
 
@@ -26,28 +24,39 @@ public class PdxHomePage extends BasePage {
 
 
     public void import_Data(String SheetName) throws InterruptedException, AWTException, IOException {
+
         waitForElementVisible(ElementLocators.IMPORT_DATA_ICON_XPATH);
         clickElement(ElementLocators.IMPORT_DATA_ICON_XPATH);
         waitForElementVisible(ElementLocators.UPLOAD_FILE_BUTTON_XPATH);
         Thread.sleep(1000);//file upload
         WebElement upload = driver.findElement(By.xpath("//input[@type='file']"));
 
-        String filePath = "C:\\Users\\2451875\\Downloads\\stibo.xls";
-        upload.sendKeys(filePath);
+        String relativePath  = ConfigFileReader.get("excelPath");
+        File excelFile = new File(relativePath);
         Thread.sleep(5000);
 
+        if (!excelFile.exists()) {
+            throw new RuntimeException("❌ Excel file not found at: " + excelFile.getAbsolutePath());
+        }
+
+        String absolutePath = excelFile.getAbsolutePath();
+        System.out.println("Uploading file from: " + absolutePath);
+
+        upload.sendKeys(absolutePath);   // Selenium requires absolute path
+        Thread.sleep(10000);
+
+        // Sheet mappings
         Map<String, Integer> sheetMapping = new HashMap<>();
         sheetMapping.put("consignment", 1); // consignment maps to Sheet1 UI
         sheetMapping.put("wholesale", 2);     // example: returns maps to Sheet2 UI
 
-        if (SheetName.equalsIgnoreCase("Sheet1")) {
-            SheetName = "consignment"; // UI shows consignment for Sheet1
-        } else if (SheetName.equalsIgnoreCase("Sheet2")) {
-            SheetName = "wholesale"; // No change
+        if (SheetName.equalsIgnoreCase("consignment")) {
+            SheetName = "consignment";
+        } else if (SheetName.equalsIgnoreCase("wholesale")) {
+            SheetName = "wholesale";
         }
 
         // Step 3: Select Sheet Based on SheetName
-
         try {
             // your original code
             if (SheetName.equalsIgnoreCase("consignment")) {
@@ -70,15 +79,13 @@ public class PdxHomePage extends BasePage {
             }
         }
 
-
         // Step 4: Read Excel Data
-        PDXExcelReader reader = new PDXExcelReader(filePath, SheetName);
+        PDXExcelReader reader = new PDXExcelReader(absolutePath, SheetName);
         int rowCount = reader.getRowCount();
         for (int i = 1; i <= rowCount; i++) {
             System.out.println("Processing row " + i + " from sheet: " + SheetName);
         }
         reader.close();
-
 
         //Click Next Button
         for (int i = 0; i < 3; i++) {
@@ -87,8 +94,8 @@ public class PdxHomePage extends BasePage {
             System.out.println("NEXT_BUTTON clicked");
             Thread.sleep(2000);
         }
-        //Click Apply Button
 
+        //Click Apply Button
         waitForElementVisible(ElementLocators.APPLY_BUTTON_XPATH);
         clickElement(ElementLocators.APPLY_BUTTON_XPATH);
         System.out.println("APPLY_BUTTON clicked");
@@ -98,9 +105,7 @@ public class PdxHomePage extends BasePage {
         clickElement(ElementLocators.OK_BUTTON_XPATH);
         System.out.println("OK_BUTTON clicked");
         Thread.sleep(10000);
-
     }
-
 
     public void click_Master_Data() throws InterruptedException {
         waitForElementVisible(ElementLocators.MASTER_DATA_ICON_XPATH);
@@ -136,8 +141,8 @@ public class PdxHomePage extends BasePage {
     public void check_Product_Id(String excelPath, String SheetName, int rowNUM, String columnHeader) throws Exception {
 
         Thread.sleep(5000);
-        waitForElementVisible(ElementLocators.FILTER_BUTTON_XPATH);
-        clickElement(ElementLocators.FILTER_BUTTON_XPATH);
+        waitForElementVisible(ElementLocators.FILTER_ICON_XPATH);
+        clickElement(ElementLocators.FILTER_ICON_XPATH);
 
         // Read Excel
         PDXExcelReader reader = new PDXExcelReader(excelPath, SheetName);
@@ -173,48 +178,26 @@ public class PdxHomePage extends BasePage {
 
         // Optional: Submit if needed
         textArea.sendKeys(Keys.ENTER);
-        Thread.sleep(2000);
+        Thread.sleep(3000);
         JavascriptExecutor js = (JavascriptExecutor) driver;
 
+        waitForElementVisible(ElementLocators.PRODUCT_LIFECYCLE_DATES_XPATH);
+        clickElement(ElementLocators.PRODUCT_LIFECYCLE_DATES_XPATH);
 
-        /*waitForElementVisible(ElementLocators.PRODUCT_LIFECYCLE_DATES_DROPDOWN_XPATH);
-        clickElement(ElementLocators.PRODUCT_LIFECYCLE_DATES_DROPDOWN_XPATH);
+        js.executeScript("document.body.style.zoom='80%'"); // Adjust percentage as needed
 
-        waitForElementVisible(ElementLocators.START_DATE_XPATH);
-        clickElement(ElementLocators.START_DATE_XPATH);
-
-        waitForElementVisible(ElementLocators.CURRENT_DATE_XPATH);
-        clickElement(ElementLocators.CURRENT_DATE_XPATH);
-        clickElement(ElementLocators.CURRENT_DATE_XPATH);
-
-
+        // Click on 'Apply'
         WebElement applyButton = driver.findElement(By.xpath(ElementLocators.APPLY_BUTTON_XPATH1));
         ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", applyButton);
         waitForElementVisible(ElementLocators.APPLY_BUTTON_XPATH1);
         clickElement(ElementLocators.APPLY_BUTTON_XPATH1);
-        Thread.sleep(10000);*/
-
-        waitForElementVisible(ElementLocators.PRODUCT_LIFECYCLE_DATES_DROPDOWN_XPATH);
-        clickElement(ElementLocators.PRODUCT_LIFECYCLE_DATES_DROPDOWN_XPATH);
-
-        waitForElementVisible(ElementLocators.START_DATE_XPATH);
-        clickElement(ElementLocators.START_DATE_XPATH);
-
-        waitForElementVisible(ElementLocators.CURRENT_DATE_XPATH);
-        clickElement(ElementLocators.CURRENT_DATE_XPATH);
-        clickElement(ElementLocators.CURRENT_DATE_XPATH);
-        js.executeScript("document.body.style.zoom='80%'"); // Adjust percentage as needed
-        WebElement availableinchanel = wait.until(ExpectedConditions.elementToBeClickable
-                (By.xpath("// span[text() ='Apply']")));
-        availableinchanel.click();
-
         Thread.sleep(10000);
 
-        WebElement checkbox = driver.findElement(By.xpath("//*[@id=\"mat-mdc-checkbox-0-input\"]"));
+        // Select all products
+        WebElement checkbox = driver.findElement(By.xpath("(//input[@type='checkbox'])[1]"));
         checkbox.click();
+
         // Initialize Excel reader
-
-
         int retries = 3;
         while (retries-- > 0) {
             try {
@@ -224,117 +207,68 @@ public class PdxHomePage extends BasePage {
                 threeDots.click();
                 break;
             } catch (Exception e) {
-                Thread.sleep(5000);
+                Thread.sleep(2000);
             }
         }
 
-
+        // Click on 'Add to Channel'
         driver.findElement(By.cssSelector(ElementLocators.ADD_TO_CHANNEL_XPATH)).click();
         Thread.sleep(5000);
 
-
-        //public void select_Channel_And_Category() throws InterruptedException, AWTException {
-
-        // WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(60));
         driver.findElement(By.xpath("//mat-icon[text()='arrow_right_alt']")).click();
-
         Thread.sleep(5000);
-        /*WebElement dropdown = wait.until(ExpectedConditions.elementToBeClickable
-                (By.xpath("//label[normalize-space()='Category' or normalize-space()='Category*']\n" +
-                        "    /following::button[.//mat-icon[normalize-space()='keyboard_arrow_down']][1]")));
-        dropdown.click();*/
-      /*  WebElement option = wait.until(ExpectedConditions.elementToBeClickable
-                (By.xpath("//*[@id=\"main-content-0\"]/div/lp-move-products/div/div[1]/lp-channel-category-selector/lp-label-field[1]/div[2]/lp-autocomplete-input/input")));
+
+        // Select Channel
+        WebElement dropdown = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("(//mat-icon[text()='keyboard_arrow_down'])[2]")));
+        dropdown.click();
+        WebElement option = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//mat-option[@title='BRANDS at M&S DEV']")));
         option.click();
-        Thread.sleep(5000);*/
-
-
-        wait.until(ExpectedConditions.invisibilityOfElementLocated(
-                By.cssSelector(".cdk-overlay-pane")
-        ));
-
-// ✅ DEFLECT FOCUS BACK TO PAGE
-        WebElement pageContainer = wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath("//lp-move-products")
-        ));
-        pageContainer.click();
-
+        Thread.sleep(5000);
         WebElement scrollContainer = driver.findElement(By.xpath("/html/body/lp-root/lp-default-app-layout" +
                 "/lp-application-layout/lp-application-sidebar-deprecated/" +
                 "lp-sidebar-menu-deprecated/mat-sidenav-container/mat-sidenav-content" +
                 "/div/div/lp-move-products/div/div[1]"));
 
-// Scroll to bottom
+        // Scroll to bottom
         ((JavascriptExecutor) driver).executeScript("arguments[0].scrollTop = arguments[0].scrollHeight;", scrollContainer);
 
-        Thread.sleep(1000);
-        wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//span[text()='Select a category']"))).click();
-        Thread.sleep(5000);
-        WebElement inputField = wait.until(ExpectedConditions.visibilityOfElementLocated(
-                By.xpath("//div[@class='search-input']//input")
-        ));
-        inputField.click();
-
-        //WebElement inputField = wait.until(ExpectedConditions.visibilityOfElementLocated(
-               // By.xpath("//div[@class='search-input']//input")
-       // ));
-        /*inputField.sendKeys("Men's Socks");
-        Thread.sleep(2000);
-        WebElement catagory = driver.findElement(By.xpath("// lp-category-list-item/div/following-sibling::mat-icon"));
-        Thread.sleep(2000);
-        catagory.click();*/
         List<String> categoryList = new ArrayList<>();
         PDXExcelReader reader1 = new PDXExcelReader(excelPath, SheetName);
         int rowCount1 = reader1.getRowCount();
 
-// Read and clean category values
+        // Read and clean category values
         for (int i = 1; i <= rowCount1; i++) {
             String category = reader1.getCellValue(i, "Catagory");
             if (category != null && !category.trim().isEmpty()) {
                 categoryList.add(category.trim());
             }
         }
-
         reader1.close();
 
-// Loop through categories and perform UI actions
-
+        // Loop through categories and perform UI actions
         for (String category : categoryList) {
-            // Click "Select a category"
 
-           /* WebElement categoryDropdown = wait.until(ExpectedConditions.elementToBeClickable(
-                    By.xpath("//span[normalize-space()='Select a category']/ancestor::div[1]")
-            ));
-            categoryDropdown.click();*/
+            // Click "Select a category"
+            wait.until(ExpectedConditions.elementToBeClickable(By.xpath("(//mat-icon[text()='keyboard_arrow_down'])[3]"))).click();
+            Thread.sleep(1000);
 
             // Type category name
-          /* WebElement inputField = wait.until(ExpectedConditions.visibilityOfElementLocated(
+            WebElement inputField = wait.until(ExpectedConditions.visibilityOfElementLocated(
                     By.xpath("//div[@class='search-input']//input")
-            ));*/
+            ));
             inputField.clear();
             inputField.sendKeys(category);
             Thread.sleep(2000);
 
             // Click on the category item
-
-
-// ... inside your loop over items
-           /* wait.until(ExpectedConditions.visibilityOfElementLocated(
-                    By.xpath("//lp-category-list-item")
-            ));*/
-
             WebElement categoryItem = wait.until(ExpectedConditions.elementToBeClickable(
-                    By.xpath(
-                            "//lp-category-list-item//mat-icon")
-            ));
-
+                    By.xpath("//mat-icon[text()='style']")));
             Thread.sleep(5000);
             categoryItem.click();
 
-
+            // Click 'Add products' button
             wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//span[@class='text']"))).click();
             Thread.sleep(10000);
-//EAN FILTER TO KNOW THE PRODUCT DETAILS:...........................
 
             WebElement grid = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//mat-icon[text()='grid_on']")));
             grid.click();
@@ -351,8 +285,7 @@ public class PdxHomePage extends BasePage {
             filterIcon.click();
             Thread.sleep(5000);
 
-// Click on "List of values"
-
+            // Click on "List of values"
             PDXExcelReader re = new PDXExcelReader(excelPath, SheetName);
             int rowcount = re.getRowCount();
             List<String> excelIDs = new ArrayList<>();
@@ -369,19 +302,19 @@ public class PdxHomePage extends BasePage {
                 throw new IllegalArgumentException("❌ No IDs found in Excel column");
             }
 
-// --- Step 2: Click on "List of values" ---
+            // --- Step 2: Click on "List of values" ---
             WebElement listOfValuesButton1 = wait.until(ExpectedConditions.elementToBeClickable(
                     By.xpath("(//span[text()='List of values'])[1]")));
             listOfValuesButton1.click();
 
-// --- Step 3: Wait for the text area and paste all IDs ---
+            // --- Step 3: Wait for the text area and paste all IDs ---
             WebElement textArea1 = wait.until(ExpectedConditions.visibilityOfElementLocated(
                     By.xpath("//input[@placeholder='Enter values']")));
 
             String AllIds = String.join(",", excelIDs);
             textArea1.sendKeys(AllIds);
 
-// Optional: Submit if needed
+            // Optional: Submit if needed
             textArea1.sendKeys(Keys.ENTER);
             Thread.sleep(5000);
 
@@ -406,6 +339,7 @@ public class PdxHomePage extends BasePage {
 
 
     public void UploadImageFromExcelRow(String excelpath, String SheetName, String imgColumn) throws InterruptedException, IOException {
+
         JavascriptExecutor js = (JavascriptExecutor) driver;
         Actions actions = new Actions(driver);
         this.wait = new WebDriverWait(driver, Duration.ofSeconds(80));
@@ -517,7 +451,7 @@ public class PdxHomePage extends BasePage {
                 js.executeScript("arguments[0].click();", assetIcon);
                     WebElement searchBox = driver.findElement(By.xpath("//i[text()='search']"));
                     searchBox.click();
-// Enter image path into input field
+        // Enter image path into input field
                 WebElement searchBox2 = wait.until(ExpectedConditions.visibilityOfElementLocated(
                         By.xpath("//input[@type='file']")
                 ));
@@ -537,7 +471,7 @@ public class PdxHomePage extends BasePage {
                 fileInput.sendKeys("hello");
 
                 System.out.println("📤 Uploaded image: " + trimmedImg);
-*/
+        */
 
         // Click "Add assets" button
                  /*   WebElement addAssetsButton = wait.until(ExpectedConditions.elementToBeClickable(
@@ -553,13 +487,13 @@ public class PdxHomePage extends BasePage {
 
         }*/
 
-/*
-if (filePath==null ||filePath.trim().isEmpty()){
-    throw new IllegalArgumentException("No file path found in Excel at row"+rowNum+",column"+columnHeader);
+        /*
+        if (filePath==null ||filePath.trim().isEmpty()){
+        throw new IllegalArgumentException("No file path found in Excel at row"+rowNum+",column"+columnHeader);
 
-}
-driver.findElement(By.xpath("//input[@type='file']")).sendKeys(filePath);
-*/
+        }
+        driver.findElement(By.xpath("//input[@type='file']")).sendKeys(filePath);
+        */
 
 
 
@@ -574,7 +508,7 @@ driver.findElement(By.xpath("//input[@type='file']")).sendKeys(filePath);
         WebElement imageElement = driver.findElement(By.tagName("img"));
         actions.moveToElement(imageElement).click().perform();
 
-*/
+        */
         // IMAGE AUTOMATION
         //driver.findElement(By.xpath("//input[@type='file']")).sendKeys("C:\\Users\\2451875\\Downloads\\WW_OYC.png");
 
@@ -592,7 +526,7 @@ driver.findElement(By.xpath("//input[@type='file']")).sendKeys(filePath);
         if (!checkbox.isSelected()) {
             js.executeScript("arguments[0].scrollIntoView(true); arguments[0].click();", checkbox);
         }
-Thread.sleep(2000);
+        Thread.sleep(2000);
 
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(40));
 
@@ -620,7 +554,7 @@ Thread.sleep(2000);
             System.out.println("ℹ️ OK message not found – continuing...");
         }
 
-// Wait for Submitted status to appear (optional)
+        // Wait for Submitted status to appear (optional)
         try {
             wait.until(ExpectedConditions.visibilityOfElementLocated(
                     By.xpath("//span[contains(text(),'Submitted')]")
@@ -630,10 +564,11 @@ Thread.sleep(2000);
             System.out.println("⚠️ Submitted status not detected – continuing anyway...");
         }
 
-// Always pass
+        // Always pass
         System.out.println("🎯 TEST PASSED (forced pass for demo)");
 
-    }}
+    }
+}
 
 
 
