@@ -121,28 +121,20 @@ public class StepAssetApprovalPage extends BasePage {
                     WebElement cell = wait.until(ExpectedConditions.elementToBeClickable(
                             By.xpath("(//td[@data-col='16'])[" + (i + 1) + "]")));
                     js.executeScript("arguments[0].scrollIntoView({block:'center'})", cell);
-                    cell.click();
-                    actions.moveToElement(cell).click().perform();
-                    Thread.sleep(1000);
-
-                    // Enter edit mode
-                    actions.sendKeys(Keys.ENTER).perform();
-
-                    // Wait for editor
-                    WebElement activeEditor = (WebElement) js.executeScript("return document.activeElement;");
-
-                    // Clear and type Excel value
-                    assert activeEditor != null;
-                    actions.moveToElement(activeEditor)
+                    actions.moveToElement(cell)
                             .click()
-                            .pause(Duration.ofMillis(200))
-                            .keyDown(Keys.CONTROL).sendKeys("a").keyUp(Keys.CONTROL)
-                            .sendKeys(Keys.DELETE)
-                            .pause(Duration.ofMillis(200))
+                            .pause(Duration.ofMillis(300))
                             .perform();
 
-                    // Commit
-                    actions.sendKeys(Keys.ENTER).perform();
+                    // Clear value using keyboard
+                    actions.keyDown(Keys.CONTROL)
+                            .sendKeys("a")
+                            .keyUp(Keys.CONTROL)
+                            .sendKeys(Keys.DELETE)
+                            .pause(Duration.ofMillis(200))
+                            .sendKeys(Keys.ENTER)   // commit
+                            .perform();
+
                     Thread.sleep(1000);
                 }
             } catch (Exception e) {
@@ -166,11 +158,10 @@ public class StepAssetApprovalPage extends BasePage {
             ok.click();
             Thread.sleep(5000);
 
-            System.out.println("🎯 Finished bulk processing and returned to main screen.");
+            System.out.println("🎯 Finished Asset approval.");
         } else {
-            // ✅ Apply Filter is disabled → click navbar logo and return to main screen
+            // ⚠ Apply Filter is disabled → click M&S logo and return to home page
             System.out.println("⚠ Apply filter is disabled. Clicking navbar logo to return to main screen...");
-
 
             try {
                 // Click filter header again to close the panel
@@ -184,16 +175,10 @@ public class StepAssetApprovalPage extends BasePage {
                 System.out.println("❌ Failed to close filter panel: " + e.getMessage());
             }
 
-            // Scroll to navbar logo
-            WebElement homePageLogo = wait.until(ExpectedConditions.presenceOfElementLocated(
+            WebElement homepageLogo = wait.until(ExpectedConditions.elementToBeClickable(
                     By.xpath(M_AND_S_LOGO_HOME_XPATH)));
-
-            ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", homePageLogo);
-            Thread.sleep(500);
-
-            // Click using JavaScript to bypass overlay issues
-            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", homePageLogo);
-            System.out.println("✅ Clicked navbar logo successfully.");
+            homepageLogo.click();
+            System.out.println("✅ Clicked Homepage logo successfully.");
             Thread.sleep(2000);
         }
     }

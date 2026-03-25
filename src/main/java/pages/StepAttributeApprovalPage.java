@@ -26,6 +26,7 @@ public class StepAttributeApprovalPage extends BasePage {
             WebElement homepageLogo = wait.until(ExpectedConditions.elementToBeClickable(
                     By.xpath(M_AND_S_LOGO_HOME_XPATH)));
             homepageLogo.click();
+            Thread.sleep(5000);
             waitForElementVisible(ElementLocators.ALL_USERS);
             clickElement(ElementLocators.ALL_USERS);
             Thread.sleep(5000);

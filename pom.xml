@@ -151,7 +151,7 @@
         <version>3.1.0</version>
 
         <configuration>
-          <skipTests>true</skipTests> <!-- ✅ DO NOT RUN TESTS IN MAVEN -->
+          <skipTests>false</skipTests> <!-- ✅ DO NOT RUN TESTS IN MAVEN -->
           <reuseForks>false</reuseForks>
           <testFailureIgnore>true</testFailureIgnore>
         </configuration>

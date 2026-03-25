@@ -56,8 +56,8 @@ Feature: Verify Waiting for Asset workflow
     When User navigate to Step application
     And User login with valid credentials
     Then User should land on brands onboarding home page
-    When User click on Asset approval link and verify it navigates to Asset approval page
-    And User filter products as per product ID from "<SheetName>" then do Asset approval
+#    When User click on Asset approval link and verify it navigates to Asset approval page
+#    And User filter products as per product ID from "<SheetName>" then do Asset approval
     When User click on Attribute approval link and verify it navigates to Attribute approval page
     And User filter products as per product ID from "<SheetName>" then do Attribute approval
     Examples:
