@@ -128,6 +128,9 @@ public class ElementLocators {
     public static final String scrollableContainer_XPATH="//div[contains(@class, 'sheet-scroll-container')]";
     public static final String ASSET_APPROVAL_LINK_XPATH ="//div[@title='Asset Approval']";
     public static final String BRAND_REF_ID_HEADER_XPATH ="(//span[@title='Brand Ref ID'])[1]";
+    public static final String MESSAGE_TO_SUPPLIER_HEADER_ASSET_XPATH = "(//span[@title='Message To Supplier'])[1]";
+    public static final String MESSAGE_TO_SUPPLIER_COLUMN_ASSET_XPATH = "//td[@data-col='16']";
+    public static final String ELLIPSIS_BUTTON_XPATH ="//i[text()='more_horiz']";
     public static final String APPROVAL_SUBMIT_BUTTON_XPATH ="//div[text()='Submit']";
     public static final String APPROVAL_TEXT_AREA_XPATH ="//textarea[@class='gwt-TextArea FormFieldWidget']";
     public static final String APPROVAL_OK_BUTTON_XPATH ="//span[text()='OK']";

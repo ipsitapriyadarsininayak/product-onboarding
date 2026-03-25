@@ -9,9 +9,6 @@
   <version>1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <name>PdxStibo</name>
-  <url>http://maven.apache.org</url>
-
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
@@ -36,8 +33,7 @@
   </properties>
 
   <dependencies>
-
-    <!-- ✅ Cucumber 7 + TestNG (NO JUnit) -->
+    <!-- ✅ Cucumber 7 + TestNG -->
     <dependency>
       <groupId>io.cucumber</groupId>
       <artifactId>cucumber-java</artifactId>
@@ -72,19 +68,7 @@
       <version>${wdm.version}</version>
     </dependency>
 
-    <!-- ✅ CSV & Excel -->
-    <dependency>
-      <groupId>com.opencsv</groupId>
-      <artifactId>opencsv</artifactId>
-      <version>${opencsv.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-csv</artifactId>
-      <version>${commons.csv.version}</version>
-    </dependency>
-
+    <!-- ✅ Excel + CSV -->
     <dependency>
       <groupId>org.apache.poi</groupId>
       <artifactId>poi</artifactId>
@@ -97,14 +81,26 @@
       <version>${poi.version}</version>
     </dependency>
 
-    <!-- ✅ Masterthought Cucumber Reporting (donut chart) -->
+    <dependency>
+      <groupId>com.opencsv</groupId>
+      <artifactId>opencsv</artifactId>
+      <version>${opencsv.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-csv</artifactId>
+      <version>${commons.csv.version}</version>
+    </dependency>
+
+    <!-- ✅ Masterthought -->
     <dependency>
       <groupId>net.masterthought</groupId>
       <artifactId>cucumber-reporting</artifactId>
-      <version>5.7.0</version>
+      <version>${masterthought.version}</version>
     </dependency>
 
-    <!-- ✅ Extent + Cucumber 7 adapter -->
+    <!-- ✅ Extent Reports -->
     <dependency>
       <groupId>com.aventstack</groupId>
       <artifactId>extentreports</artifactId>
@@ -137,7 +133,7 @@
   <build>
     <plugins>
 
-      <!-- ✅ Java 17 compiler (explicit) -->
+      <!-- ✅ Java Compiler -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -148,61 +144,28 @@
         </configuration>
       </plugin>
 
-      <!-- ✅ Surefire (TestNG runner) -->
+      <!-- ✅ Surefire: SKIP TESTS (Your requirement) -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.1.0</version>
 
         <configuration>
-          <systemPropertyVariables>
-            <cucumber.options>--plugin json:target/cucumber-reports.json</cucumber.options>
-          </systemPropertyVariables>
-          <includes>
-            <include>**/TestRunner.java</include>
-          </includes>
-
-          <testNGArtifactName>org.testng:testng</testNGArtifactName>
-
-          <suiteXmlFiles>
-            <suiteXmlFile>src/test/resources/testng.xml</suiteXmlFile>
-          </suiteXmlFiles>
-
-          <skipTests>false</skipTests>
-          <testFailureIgnore>true</testFailureIgnore>
+          <skipTests>true</skipTests> <!-- ✅ DO NOT RUN TESTS IN MAVEN -->
           <reuseForks>false</reuseForks>
+          <testFailureIgnore>true</testFailureIgnore>
         </configuration>
-
-        <!-- ✅ Force tests to run before verify -->
-        <executions>
-          <execution>
-            <id>run-tests-test-phase</id>
-            <phase>test</phase>
-            <goals>
-              <goal>test</goal>
-            </goals>
-          </execution>
-
-          <execution>
-            <id>run-tests-verify-phase</id>
-            <phase>verify</phase>
-            <goals>
-              <goal>test</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
 
-      <!-- ✅ Masterthought HTML Report (reads the JSON from Cucumber) -->
-
+      <!-- ✅ Masterthought donut chart -->
       <plugin>
         <groupId>net.masterthought</groupId>
         <artifactId>maven-cucumber-reporting</artifactId>
-        <version>5.7.0</version>
+        <version>${masterthought.version}</version>
 
         <executions>
           <execution>
-            <id>generate-cucumber-reports</id>
+            <id>generate-cucumber-html-report</id>
             <phase>verify</phase>
             <goals>
               <goal>generate</goal>
@@ -210,22 +173,18 @@
 
             <configuration>
               <projectName>Product-Onboarding</projectName>
+
+              <!-- ✅ JSON is created by IntelliJ run, NOT Maven -->
               <jsonFiles>
-                <param>**/*.json</param>
+                <param>target/cucumber-reports/cucumber.json</param>
               </jsonFiles>
 
-              <!-- ✅ Output directory -->
-              <outputDirectory>${project.build.directory}/cucumber-reports</outputDirectory>
-              <!-- ✅ Input directory -->
-              <inputDirectory>${project.build.directory}/cucumber-reports</inputDirectory>
-
+              <outputDirectory>target/cucumber-reports</outputDirectory>
               <checkBuildResult>false</checkBuildResult>
             </configuration>
-
           </execution>
         </executions>
       </plugin>
-
 
     </plugins>
   </build>

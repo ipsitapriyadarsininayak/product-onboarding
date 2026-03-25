@@ -163,8 +163,6 @@ public class StepApplicationSteps extends BasePage {
             System.err.println("Error while clicking on Asset Approval: " + e.getMessage());
             throw e;
         }
-
-
     }
 
     @Then("validate user landed into asset approval screen")

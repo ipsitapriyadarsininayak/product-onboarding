@@ -3,6 +3,7 @@ package pages;
 import constants.ElementLocators;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -20,6 +21,7 @@ public class StepAssetApprovalPage extends BasePage {
 
     WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
     Actions actions = new Actions(driver);
+    JavascriptExecutor js = (JavascriptExecutor) driver;
 
     public void gotoAssetApprovalAndVerify() {
 
@@ -88,19 +90,64 @@ public class StepAssetApprovalPage extends BasePage {
             System.out.println("✅ Applied filter for all BrandIDs");
             Thread.sleep(10000);
 
-            // Select All
+            // Clear 'Message to Supplier' field before proceeding to Approve
             try {
                 WebElement selectAll = wait.until(ExpectedConditions.elementToBeClickable(
                         By.xpath(SELECT_ALL_BUTTON_XPATH)));
                 selectAll.click();
                 System.out.println("✅ Selected all filtered items");
                 Thread.sleep(1000);
-            } catch (Exception e) {
-                System.out.println("❌ Select All failed: " + e.getMessage());
-            }
 
-            WebElement threeDots = driver.findElement(By.xpath("//i[text()='more_horiz']"));
-            threeDots.click();
+                // Scroll slightly to bring column into view
+                WebElement scrollable = driver.findElement(By.xpath("//div[contains(@class, 'sheet-scroll-container')]"));
+                js.executeScript("arguments[0].scrollLeft += 100;", scrollable);
+                Thread.sleep(3000);
+
+                // Scroll header into view
+                WebElement messageToSupplierHeader = driver.findElement(By.xpath(MESSAGE_TO_SUPPLIER_HEADER_ASSET_XPATH));
+                js.executeScript("arguments[0].scrollIntoView({block:'center'})", messageToSupplierHeader);
+                Thread.sleep(2000);
+
+                // Get all UI cells for Message To Supplier column
+                List<WebElement> uiCells = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(
+                        By.xpath(MESSAGE_TO_SUPPLIER_COLUMN_ASSET_XPATH)));
+
+                int processCount = uiCells.size();
+                System.out.println("Processing " + processCount + " rows for Message To Supplier...");
+
+                // Iterate and clear each cell
+                for (int i = 0; i < processCount; i++) {
+
+                    WebElement cell = wait.until(ExpectedConditions.elementToBeClickable(
+                            By.xpath("(//td[@data-col='16'])[" + (i + 1) + "]")));
+                    js.executeScript("arguments[0].scrollIntoView({block:'center'})", cell);
+                    cell.click();
+                    actions.moveToElement(cell).click().perform();
+                    Thread.sleep(1000);
+
+                    // Enter edit mode
+                    actions.sendKeys(Keys.ENTER).perform();
+
+                    // Wait for editor
+                    WebElement activeEditor = (WebElement) js.executeScript("return document.activeElement;");
+
+                    // Clear and type Excel value
+                    assert activeEditor != null;
+                    actions.moveToElement(activeEditor)
+                            .click()
+                            .pause(Duration.ofMillis(200))
+                            .keyDown(Keys.CONTROL).sendKeys("a").keyUp(Keys.CONTROL)
+                            .sendKeys(Keys.DELETE)
+                            .pause(Duration.ofMillis(200))
+                            .perform();
+
+                    // Commit
+                    actions.sendKeys(Keys.ENTER).perform();
+                    Thread.sleep(1000);
+                }
+            } catch (Exception e) {
+                System.out.println("❌ Select All failed or Message not cleared : " + e.getMessage());
+            }
 
             // Submit
             WebElement submit = wait.until(ExpectedConditions.elementToBeClickable(
@@ -111,7 +158,7 @@ public class StepAssetApprovalPage extends BasePage {
             WebElement approvalText = wait.until(ExpectedConditions.elementToBeClickable(
                     By.xpath(APPROVAL_TEXT_AREA_XPATH)));
             approvalText.click();
-            approvalText.sendKeys("Asset approval");
+            approvalText.sendKeys("Asset approved");
             Thread.sleep(1000);
 
             WebElement ok = wait.until(ExpectedConditions.elementToBeClickable(

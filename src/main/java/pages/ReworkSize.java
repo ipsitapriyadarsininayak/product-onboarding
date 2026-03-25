@@ -317,17 +317,14 @@ public class ReworkSize extends BasePage {
 
                 actions.moveToElement(activeEditor)
                         .click()
-                        .pause(Duration.ofMillis(150))
+                        .pause(Duration.ofMillis(250))
                         .keyDown(Keys.CONTROL).sendKeys("a").keyUp(Keys.CONTROL)
                         .sendKeys(Keys.DELETE)
-                        .pause(Duration.ofMillis(150))
+                        .pause(Duration.ofMillis(250))
                         .sendKeys(excelValue)
                         .perform();
 
                 actions.sendKeys(Keys.ENTER).perform();
-                Thread.sleep(600);
-
-
                 Thread.sleep(1000);
             }
 
@@ -345,7 +342,7 @@ public class ReworkSize extends BasePage {
                 Thread.sleep(500);
                 // Retry commit (unchanged)
                 cell.click();
-                actions.sendKeys(Keys.ENTER).perform();
+                Thread.sleep(1000);
                 actions.sendKeys(Keys.ENTER).perform();
             }
         }
@@ -686,11 +683,11 @@ public class ReworkSize extends BasePage {
        /* driver.findElement(By.xpath("//div[text()='Unfreeze panes']")).click();
         Thread.sleep(2000);*/
 
-        WebElement threeDots = driver.findElement(By.xpath("//i[text()='more_horiz']"));
-        threeDots.click();
-        Thread.sleep(1000);
-        WebElement scrollable2 = driver.findElement(By.xpath("//div[contains(@class, 'sheet-scroll-container')]"));
-        js.executeScript("arguments[0].scrollLeft = arguments[0].scrollWidth;", scrollable2);
+//        WebElement threeDots = driver.findElement(By.xpath("//i[text()='more_horiz']"));
+//        threeDots.click();
+//        Thread.sleep(1000);
+//        WebElement scrollable2 = driver.findElement(By.xpath("//div[contains(@class, 'sheet-scroll-container')]"));
+//        js.executeScript("arguments[0].scrollLeft = arguments[0].scrollWidth;", scrollable2);
         WebElement strokeno = driver.findElement(By.xpath("//div[text()='Stroke No. Calculation']"));
         strokeno.click();
         Thread.sleep(1000);

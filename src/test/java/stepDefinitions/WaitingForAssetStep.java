@@ -267,7 +267,7 @@ public class WaitingForAssetStep extends BasePage {
             }
             System.out.println("Excel path from config: " + excelPath);
 
-            String columnHeader = "BrandID";
+            String columnHeader = "Brand Ref ID";
 
             // Method to filter product and do Asset approval
             stepAssetApprovalPage.filterProductsThenDoAssetApproval(excelPath, SheetName, columnHeader);
