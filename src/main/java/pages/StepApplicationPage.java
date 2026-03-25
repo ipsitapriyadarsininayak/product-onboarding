@@ -19,8 +19,8 @@ import static constants.ElementLocators.*;
 
 public class StepApplicationPage extends BasePage {
 
-    String username_step = ConfigFileReader.get("PID");
-    String password_step = ConfigFileReader.get("password_step");
+    String username_step = ConfigFileReader.get("STEP_USERNAME");
+    String password_step = ConfigFileReader.get("STEP_PASSWORD");
 
 
     public void stepLogin() throws IOException, InterruptedException {

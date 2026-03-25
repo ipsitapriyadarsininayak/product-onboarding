@@ -53,7 +53,7 @@ public class ElementLocators {
 
     //select category
     public static final String CATEGORY_DROPDOWN_ARROW_XPATH = "(//mat-icon[text()='keyboard_arrow_down'])[3]";
-    public static final String SEARCH_CATEGORY_TEXTBOX_XPATH = "//div[@class='search-input']//input";
+    public static final String SEARCH_CATEGORY_TEXTBOX_XPATH = "//input[@placeholder='Search...']";
     public static final String SElECT_SEARCHED_CATEGORY_XPATH = "//mat-icon[text()='style']";
 
     //add products

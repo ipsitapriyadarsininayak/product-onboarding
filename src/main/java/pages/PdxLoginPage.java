@@ -11,8 +11,8 @@ public class PdxLoginPage extends BasePage{
 //    private static final String FILE_PATH = System.getProperty("user.home") + "/Desktop/PdxValidCredentials.txt";
 //    String username = System.getenv("USERNAME");
     String invalidUsername = System.getenv("InvalidUser");
-    String username = ConfigFileReader.get("username_PDX");
-    String password = ConfigFileReader.get("password_PDX");
+    String username = ConfigFileReader.get("PDX_USERNAME");
+    String password = ConfigFileReader.get("PDX_PASSWORD");
 
 
     public void pdxLogin() throws IOException, InterruptedException {

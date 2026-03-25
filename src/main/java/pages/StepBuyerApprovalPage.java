@@ -277,6 +277,8 @@ public class StepBuyerApprovalPage extends BasePage {
             actions.sendKeys(Keys.ENTER).perform();
 
             // Wait for editor
+            WebElement editorPanel = wait.until(ExpectedConditions.elementToBeClickable(
+                    By.cssSelector("div.sheet-edit-mode-editor-overlay-panel")));
             WebElement activeEditor = (WebElement) js.executeScript("return document.activeElement;");
 
             // Clear and type Excel value

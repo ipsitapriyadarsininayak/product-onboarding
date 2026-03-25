@@ -94,26 +94,26 @@ public class Hooks {
     }
 
 
-@AfterStep
-public void afterEachStep(Scenario scenario) {
-    if (basePage == null) {
-        basePage = new BasePage();
-    }
-    try {
-        String screenshotPath = basePage.takeScreenshot(scenario.getName());
-        Path path = Paths.get(screenshotPath);
-        byte[] bytes = Files.readAllBytes(path);
-        scenario.attach(bytes, "image/png", "STEP");
-
-        if (scenario.isFailed()) {
-            ExtentReportManager.logStep("Step failed", Status.FAIL);
-        } else {
-            ExtentReportManager.logStep("Step passed", Status.PASS);
+    @AfterStep
+    public void afterEachStep(Scenario scenario) {
+        if (basePage == null) {
+            basePage = new BasePage();
         }
-    } catch (Exception e) {
-        scenario.log("❌ Failed to capture step screenshot: " + e.getMessage());
+        try {
+            String screenshotPath = basePage.takeScreenshot(scenario.getName());
+            Path path = Paths.get(screenshotPath);
+            byte[] bytes = Files.readAllBytes(path);
+            scenario.attach(bytes, "image/png", "STEP");
+
+            if (scenario.isFailed()) {
+                ExtentReportManager.logStep("Step failed", Status.FAIL);
+            } else {
+                ExtentReportManager.logStep("Step passed", Status.PASS);
+            }
+        } catch (Exception e) {
+            scenario.log("❌ Failed to capture step screenshot: " + e.getMessage());
+        }
     }
-}
 }
 
 
@@ -145,9 +145,9 @@ public void afterEachStep(Scenario scenario) {
         ExtentReportManager.flush(); // finalize report once
     }*/
 
-        //BrowserDriver.quitDriver();
-       // ExtentReportManager.flush();// Close browser to prevent further steps
-            //isBrowserStarted=false;// Reset for next scenario
+//BrowserDriver.quitDriver();
+// ExtentReportManager.flush();// Close browser to prevent further steps
+//isBrowserStarted=false;// Reset for next scenario
 
 
 
