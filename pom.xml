@@ -28,8 +28,9 @@
     <extent.version>5.0.9</extent.version>
     <extent.adapter.version>1.14.0</extent.adapter.version>
 
-    <!-- Plugins -->
-    <maven.surefire.version>3.1.0</maven.surefire.version>
+    <!-- Plugin versions -->
+    <maven.surefire.plugin.version>3.0.0-M9</maven.surefire.plugin.version>
+    <maven.cucumber.reporting.version>5.7.0</maven.cucumber.reporting.version>
   </properties>
 
   <dependencies>
@@ -144,42 +145,38 @@
         </configuration>
       </plugin>
 
-      <!-- ✅ Surefire: SKIP TESTS (Your requirement) -->
+      <!-- ✅ Surefire -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.1.0</version>
-
+        <version>3.1.0</version> <!-- or latest stable -->
         <configuration>
-          <skipTests>false</skipTests> <!-- ✅ DO NOT RUN TESTS IN MAVEN -->
-          <reuseForks>false</reuseForks>
+          <systemPropertyVariables>
+            <cucumber.options>--plugin json:target/cucumber-reports.json</cucumber.options>
+          </systemPropertyVariables>
           <testFailureIgnore>true</testFailureIgnore>
         </configuration>
+
       </plugin>
 
       <!-- ✅ Masterthought donut chart -->
       <plugin>
         <groupId>net.masterthought</groupId>
         <artifactId>maven-cucumber-reporting</artifactId>
-        <version>${masterthought.version}</version>
-
+        <version>5.7.0</version>
         <executions>
           <execution>
-            <id>generate-cucumber-html-report</id>
+            <id>generate-cucumber-reports</id>
             <phase>verify</phase>
             <goals>
               <goal>generate</goal>
             </goals>
-
             <configuration>
-              <projectName>Product-Onboarding</projectName>
-
-              <!-- ✅ JSON is created by IntelliJ run, NOT Maven -->
               <jsonFiles>
-                <param>target/cucumber-reports/cucumber.json</param>
+                <param>**/*.json</param>
               </jsonFiles>
-
-              <outputDirectory>target/cucumber-reports</outputDirectory>
+              <outputDirectory>${project.build.directory}/cucumber-reports</outputDirectory>
+              <inputDirectory>${project.build.directory}/cucumber-reports</inputDirectory>
               <checkBuildResult>false</checkBuildResult>
             </configuration>
           </execution>
