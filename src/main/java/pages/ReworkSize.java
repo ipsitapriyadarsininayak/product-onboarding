@@ -776,11 +776,11 @@ public class ReworkSize extends BasePage {
 
 public void pricing1(String excelPath, String SheetName) throws Exception {
 
-            WebElement scrollable = driver.findElement(By.xpath("(//div[contains(@class, 'sheet-scroll-container')])[2]"));
+            WebElement scrollable = driver.findElement(By.xpath("(//div[contains(@class, 'sheet-scroll-container')])[1]"));
             JavascriptExecutor js = (JavascriptExecutor) driver;
             js.executeScript("arguments[0].scrollLeft = arguments[0].scrollWidth;", scrollable);
 
-            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(60));
+            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
             WebElement pricingElement = wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("//span[@title='Pricing']")));
 
             // Scroll into view

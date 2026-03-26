@@ -65,6 +65,7 @@ public class StepAssetApprovalPage extends BasePage {
         // Apply filter
         wait.until(ExpectedConditions.invisibilityOfElementLocated(By.id("waitScreenOverlayGlass")));
 
+        js.executeScript("document.body.style.zoom='80%'");
         WebElement filterHeader = wait.until(ExpectedConditions.elementToBeClickable(
                 By.xpath(BRAND_REF_ID_HEADER_XPATH)));
         filterHeader.click();

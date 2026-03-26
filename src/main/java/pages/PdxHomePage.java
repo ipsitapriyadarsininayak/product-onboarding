@@ -99,6 +99,7 @@ public class PdxHomePage extends BasePage {
         waitForElementVisible(ElementLocators.APPLY_BUTTON_XPATH);
         clickElement(ElementLocators.APPLY_BUTTON_XPATH);
         System.out.println("APPLY_BUTTON clicked");
+        Thread.sleep(2000);
 
         //Ok Button
         waitForElementVisible(ElementLocators.OK_BUTTON_XPATH);
