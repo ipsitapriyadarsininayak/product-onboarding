@@ -5,6 +5,7 @@ import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import utils.Base64Utils;
 import utils.ConfigFileReader;
 import utils.PDXExcelReader;
 
@@ -19,16 +20,19 @@ import static constants.ElementLocators.*;
 
 public class StepApplicationPage extends BasePage {
 
-    String username_step = ConfigFileReader.get("STEP_USERNAME");
-    String password_step = ConfigFileReader.get("STEP_PASSWORD");
+    String encodedSTEP_Username = ConfigFileReader.get("STEP_USERNAME");
+    String encodedSTEP_Password = ConfigFileReader.get("STEP_PASSWORD");
 
 
-    public void stepLogin() throws IOException, InterruptedException {
+    public void stepLogin() throws InterruptedException {
+
+        String STEP_username = Base64Utils.decode(encodedSTEP_Username);
+        String STEP_password = Base64Utils.decode(encodedSTEP_Password);
 
         waitForElementVisible(ElementLocators.STEP_USERNAME_INPUT_XPATH);
-        enterText(ElementLocators.STEP_USERNAME_INPUT_XPATH, username_step);
+        enterText(ElementLocators.STEP_USERNAME_INPUT_XPATH, STEP_username);
         waitForElementVisible(ElementLocators.STEP_PASSWORD_INPUT_XPATH);
-        enterText(ElementLocators.STEP_PASSWORD_INPUT_XPATH, password_step);
+        enterText(ElementLocators.STEP_PASSWORD_INPUT_XPATH, STEP_password);
         Thread.sleep(5000);
         waitForElementVisible(ElementLocators.STEP_LOGIN_BUTTON_XPATH);
         clickElement(ElementLocators.STEP_LOGIN_BUTTON_XPATH);

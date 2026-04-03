@@ -1,6 +1,7 @@
 package pages;
 
 import constants.ElementLocators;
+import utils.Base64Utils;
 import utils.ConfigFileReader;
 import utils.NotepadReader;
 
@@ -8,24 +9,21 @@ import java.io.IOException;
 
 public class PdxLoginPage extends BasePage{
 
-//    private static final String FILE_PATH = System.getProperty("user.home") + "/Desktop/PdxValidCredentials.txt";
-//    String username = System.getenv("USERNAME");
     String invalidUsername = System.getenv("InvalidUser");
-    String username = ConfigFileReader.get("PDX_USERNAME");
-    String password = ConfigFileReader.get("PDX_PASSWORD");
+    String encodedPDX_Username = ConfigFileReader.get("PDX_USERNAME");
+    String encodedPDX_Password = ConfigFileReader.get("PDX_PASSWORD");
 
+    public void pdxLogin() {
 
-    public void pdxLogin() throws IOException, InterruptedException {
+        String PDX_username = Base64Utils.decode(encodedPDX_Username);
+        String PDX_password = Base64Utils.decode(encodedPDX_Password);
 
-        /*String password = ExcelReader.getDecodedPassword();*/
-//        String password = NotepadReader.getDecodePassword(FILE_PATH);
         waitForElementVisible(ElementLocators.USERNAME_INPUT_XPATH);
-        enterText(ElementLocators.USERNAME_INPUT_XPATH, username);
+        enterText(ElementLocators.USERNAME_INPUT_XPATH, PDX_username);
         clickElement(ElementLocators.NEXT_BUTTON_XPATH);
         waitForElementVisible(ElementLocators.PASSWORD_INPUT_XPATH);
-        enterText(ElementLocators.PASSWORD_INPUT_XPATH, password);
+        enterText(ElementLocators.PASSWORD_INPUT_XPATH, PDX_password);
         clickElement(ElementLocators.LOGIN_BUTTON_XPATH);
-
     }
 
     public void pdxInvalidLogin() throws IOException {
