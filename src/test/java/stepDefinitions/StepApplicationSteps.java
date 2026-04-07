@@ -25,7 +25,8 @@ public class StepApplicationSteps extends BasePage {
 
     @When("User navigate to Step application")
     public void user_navigate_to_step_application() throws InterruptedException {
-        driver.get(ConfigFileReader.get("StepBrandsOnboardingUrl"));
+//        driver.get(ConfigFileReader.get("StepBrandsOnboardingUrl"));
+        driver.get(ConfigFileReader.get("Step_SaaS_URL"));
         Thread.sleep(5000);
     }
 
