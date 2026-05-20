@@ -702,7 +702,6 @@ public class ReworkSize extends BasePage {
         {
             System.out.println("✅ All Buyer Approval products processed. Proceeding to Asset Approval...");
         }
-
         {
 //            System.out.println("⚠️ Some Buyer Approval products were skipped or failed. Proceeding to Asset Approval...");
         }
