@@ -133,17 +133,6 @@ public class WaitingForAssetStep extends BasePage {
     @And("User expand Seasonality column and select CoreNewness value as per {string}")
     public void userExpandSeasonalityColumnAndSelectCoreNewnessValueAsPer(String SheetName) throws Exception {
 
-        String excelPath = ConfigFileReader.get("excelPath");
-
-        int rowNum = 1;
-        String columnHeader = "PDX Product ID";
-        String columnHeader1 = "Core/Newness";
-        String columnHeader2= "Parent Node Lists";
-        String columnHeader3="PRODUCT TYPE Â© (External Merch Category)";
-        reworksizePage.filterPDXid1(excelPath, SheetName, rowNum, columnHeader,columnHeader1,columnHeader2,columnHeader3);
-        System.out.println("✅ Test completed successfully. Stopping further steps...");
-
-        /*
         try {
             String excelPath = ConfigFileReader.get("excelPath");
             if (excelPath == null || excelPath.isEmpty()) {
@@ -151,26 +140,21 @@ public class WaitingForAssetStep extends BasePage {
             }
             System.out.println("Excel path from config: " + excelPath);
 
-            String columnHeader = "ID";
+            String columnHeader = "Core/Newness";
 
-            // Method to filter product and add to channel
-            pdxMasterPage.filterProductsThenAddToChannel(excelPath, SheetName, columnHeader);
-            System.out.println("✅ EXIT filterProductsThenAddToChannel (PASS)");
-
-            // Method to filter product and submit to Step
-            pdxChannelPage.filterProductThenSubmitToStep(excelPath, SheetName, columnHeader);
-            System.out.println("✅ EXIT filterProductThenSubmitToStep (PASS)");
-            System.out.println("✅ EXIT userFiltersTheProductsImportedFromAndSubmitToStepWhichDoesnotHaveImages (PASS)");
+            // Method to select Seasonality fields values
+            stepBuyerApprovalPage.selectCoreNewnessValue(excelPath, SheetName, columnHeader);
+            System.out.println("✅ EXIT selectCoreNewnessValue (PASS)");
 
         } catch (Throwable t) {
-            System.out.println("❌ EXIT userFiltersTheProductsImportedFromAndSubmitToStepWhichDoesnotHaveImages (FAIL): " + t);
+            System.out.println("❌ EXIT selectCoreNewnessValue (FAIL): " + t);
             throw t;
-        } */
+        }
     }
 
     @And("User expand Ecom column and provide required values as per {string}")
     public void userExpandEcomColumnAndProvideRequiredValuesAsPer(String SheetName) throws Exception {
-        /*
+
         try {
             String excelPath = ConfigFileReader.get("excelPath");
             if (excelPath == null || excelPath.isEmpty()) {
@@ -178,26 +162,24 @@ public class WaitingForAssetStep extends BasePage {
             }
             System.out.println("Excel path from config: " + excelPath);
 
-            String columnHeader = "ID";
+            String shortDescriptionColumnHeader = "Short Item Description";
+            String parentNodeColumnHeader = "Parent Node Lists";
+            String productIDColumnHeader = "PDX Product ID";
 
-            // Method to filter product and add to channel
-            pdxMasterPage.filterProductsThenAddToChannel(excelPath, SheetName, columnHeader);
-            System.out.println("✅ EXIT filterProductsThenAddToChannel (PASS)");
-
-            // Method to filter product and submit to Step
-            pdxChannelPage.filterProductThenSubmitToStep(excelPath, SheetName, columnHeader);
-            System.out.println("✅ EXIT filterProductThenSubmitToStep (PASS)");
-            System.out.println("✅ EXIT userFiltersTheProductsImportedFromAndSubmitToStepWhichDoesnotHaveImages (PASS)");
+            // Method to select Ecom fields values
+            stepBuyerApprovalPage.selectEcomColumnValues(excelPath, SheetName, shortDescriptionColumnHeader, parentNodeColumnHeader,
+                    productIDColumnHeader);
+            System.out.println("✅ EXIT selectEcomColumnValues (PASS)");
 
         } catch (Throwable t) {
-            System.out.println("❌ EXIT userFiltersTheProductsImportedFromAndSubmitToStepWhichDoesnotHaveImages (FAIL): " + t);
+            System.out.println("❌ EXIT selectEcomColumnValues (FAIL): " + t);
             throw t;
-        } */
+        }
     }
 
     @And("User expand Hierarchy column and provide required values as per {string}")
     public void userExpandHierarchyColumnAndProvideRequiredValuesAsPer(String SheetName) throws Exception {
-        /*
+
         try {
             String excelPath = ConfigFileReader.get("excelPath");
             if (excelPath == null || excelPath.isEmpty()) {
@@ -205,26 +187,21 @@ public class WaitingForAssetStep extends BasePage {
             }
             System.out.println("Excel path from config: " + excelPath);
 
-            String columnHeader = "ID";
+            String columnHeader ="PRODUCT TYPE Â© (External Merch Category)";
 
-            // Method to filter product and add to channel
-            pdxMasterPage.filterProductsThenAddToChannel(excelPath, SheetName, columnHeader);
-            System.out.println("✅ EXIT filterProductsThenAddToChannel (PASS)");
-
-            // Method to filter product and submit to Step
-            pdxChannelPage.filterProductThenSubmitToStep(excelPath, SheetName, columnHeader);
-            System.out.println("✅ EXIT filterProductThenSubmitToStep (PASS)");
-            System.out.println("✅ EXIT userFiltersTheProductsImportedFromAndSubmitToStepWhichDoesnotHaveImages (PASS)");
+            // Method to select Hierarchy fields values
+            stepBuyerApprovalPage.selectHierarchyColumnValues(excelPath, SheetName, columnHeader);
+            System.out.println("✅ EXIT selectHierarchyColumnValues (PASS)");
 
         } catch (Throwable t) {
-            System.out.println("❌ EXIT userFiltersTheProductsImportedFromAndSubmitToStepWhichDoesnotHaveImages (FAIL): " + t);
+            System.out.println("❌ EXIT selectHierarchyColumnValues (FAIL): " + t);
             throw t;
-        } */
+        }
     }
 
     @And("User expand Pricing column and provide required values as per {string}")
     public void userExpandPricingColumnAndProvideRequiredValuesAsPer(String SheetName) throws Exception {
-        /*
+
         try {
             String excelPath = ConfigFileReader.get("excelPath");
             if (excelPath == null || excelPath.isEmpty()) {
@@ -232,21 +209,31 @@ public class WaitingForAssetStep extends BasePage {
             }
             System.out.println("Excel path from config: " + excelPath);
 
-            String columnHeader = "ID";
+            String costPriceColumnHeader = "Cost Price";
+            String eVATRateColumnHeader = "VAT Rate";
 
-            // Method to filter product and add to channel
-            pdxMasterPage.filterProductsThenAddToChannel(excelPath, SheetName, columnHeader);
-            System.out.println("✅ EXIT filterProductsThenAddToChannel (PASS)");
-
-            // Method to filter product and submit to Step
-            pdxChannelPage.filterProductThenSubmitToStep(excelPath, SheetName, columnHeader);
-            System.out.println("✅ EXIT filterProductThenSubmitToStep (PASS)");
-            System.out.println("✅ EXIT userFiltersTheProductsImportedFromAndSubmitToStepWhichDoesnotHaveImages (PASS)");
+            // Method to select Pricing fields values
+            stepBuyerApprovalPage.selectPricingColumnValues(excelPath, SheetName, costPriceColumnHeader, eVATRateColumnHeader);
+            System.out.println("✅ EXIT selectPricingColumnValues (PASS)");
 
         } catch (Throwable t) {
-            System.out.println("❌ EXIT userFiltersTheProductsImportedFromAndSubmitToStepWhichDoesnotHaveImages (FAIL): " + t);
+            System.out.println("❌ EXIT selectPricingColumnValues (FAIL): " + t);
             throw t;
-        } */
+        }
+    }
+
+    @And("User assign size range and auto assign Stroke number then submit as Buyer approved")
+    public void userAssignSizeRangeAndAutoAssignStrokeNumberThenSubmitAsBuyerApproved() throws IOException, InterruptedException {
+
+        try {
+            // Method to select Pricing fields values
+            stepBuyerApprovalPage.assignSizeRangeAndStrokeNumber();
+            System.out.println("✅ EXIT assignSizeRangeAndStrokeNumber (PASS)");
+
+        } catch (Throwable t) {
+            System.out.println("❌ EXIT assignSizeRangeAndStrokeNumber (FAIL): " + t);
+            throw t;
+        }
     }
 
     @When("User click on Asset approval link and verify it navigates to Asset approval page")
@@ -326,7 +313,7 @@ public class WaitingForAssetStep extends BasePage {
             System.out.println("✅ EXIT filterProductsInChannelGridView (PASS)");
 
         } catch (Throwable t) {
-            System.out.println("❌ EXIT userNavigateToChannelAndFilterProductsAsPerProductIDFrom (FAIL): " + t);
+            System.out.println("❌ EXIT filterProductsInChannelGridView (FAIL): " + t);
             throw t;
         }
     }
@@ -347,7 +334,7 @@ public class WaitingForAssetStep extends BasePage {
             System.out.println("✅ EXIT UploadImageFromAsPerExcel (PASS)");
 
         } catch (Throwable t) {
-            System.out.println("❌ EXIT userNavigateToChannelAndFilterProductsAsPerProductIDFrom (FAIL): " + t);
+            System.out.println("❌ EXIT UploadImageFromAsPerExcel (FAIL): " + t);
             throw t;
         }
     }

@@ -36,6 +36,7 @@ Feature: Verify Waiting for Asset workflow
     And User expand Ecom column and provide required values as per "<SheetName>"
     And User expand Hierarchy column and provide required values as per "<SheetName>"
     And User expand Pricing column and provide required values as per "<SheetName>"
+    And User assign size range and auto assign Stroke number then submit as Buyer approved
     Examples:
       | SheetName   |
       | consignment |

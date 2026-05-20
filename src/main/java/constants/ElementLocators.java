@@ -16,7 +16,6 @@ public class ElementLocators {
     //Import Data
     public static final String IMPORT_DATA_ICON_XPATH = "//span[text()=' Import data ']";
     public static final String UPLOAD_FILE_BUTTON_XPATH = "//button[text()=' Upload file ']";
-    public static final String EXCEL_SHEET_ABS_PATH = "C:\\Users\\2451875\\OneDrive - TCS COM PROD\\BRAND\\PdxStibo\\PdxStibo\\src\\test\\resources\\data\\TestDataEAN.xlsx ";
     public static final String APPLY_BUTTON_XPATH = "//button[.//span[normalize-space()='Apply']] ";
     public static final String OK_BUTTON_XPATH = "//span[text() =' Ok ']";
     public static final String MASTER_DATA_ICON_XPATH = "//span[text() =' Master data ']";

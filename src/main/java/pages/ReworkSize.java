@@ -233,6 +233,7 @@ public class ReworkSize extends BasePage {
             }
         }
 
+        // -----------Ecom-----------------------------------------
         WebElement scrollable = driver.findElement(By.xpath("//div[contains(@class, 'sheet-scroll-container')]"));
         //JavascriptExecutor js = (JavascriptExecutor) driver;
         js.executeScript("arguments[0].scrollLeft += 600;", scrollable);
@@ -506,6 +507,7 @@ public class ReworkSize extends BasePage {
         js.executeScript("arguments[0].scrollLeft += 400;", scrollable);
         Thread.sleep(2000);
 
+        //-------------------Hierarchy---------------------------------------------------------------------------------------
         WebElement hierarchyElement1 = wait.until(ExpectedConditions.elementToBeClickable(
                 By.xpath("//span[@title='Hierarchy']")));
 
