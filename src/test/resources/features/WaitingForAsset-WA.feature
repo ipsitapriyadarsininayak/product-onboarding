@@ -1,5 +1,5 @@
 
-Feature: Verify Waiting for Asset workflow
+Feature: Verify Waiting for Asset workflow in STEP to PDX
 
   @consignment_pdx_login_WA
   Scenario: Login with valid credentials

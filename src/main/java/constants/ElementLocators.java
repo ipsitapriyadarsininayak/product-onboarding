@@ -69,7 +69,6 @@ public class ElementLocators {
     public static final String SEARCHED_IMAGE_SPAN_XPATH = "//div[@class='cdk-virtual-scroll-content-wrapper']//img";
     public static final String ADD_ASSET_BUTTON_XPATH = "//span[text()=' Add assets ']";
 
-
     //Submit Icon from Ellipsis
     public static final String ELLIPSIS_XPATH = "(//button[@aria-haspopup='menu'])[3]";
     public static final String SUBMIT_ELLIPSIS_XPATH = "button[aria-label=\"Submit\"]";
@@ -96,7 +95,7 @@ public class ElementLocators {
     public static final String BRANDS_ONBOARDING_HEADER_XPATH = "(//div[@title='Brands Onboarding'])[1]";
     public static final String M_AND_S_LOGO_HOME_XPATH = "//div[@id='stibo-element-navbar-logo']";
 
-    //Buyer approval elements
+    //Buyer approval
     public static final String ALL_USERS="(//div[@title='Show all items assigned to any user'])[1]";
     public static final String BUYERS_APPROVAL_LINK_XPATH = "//div[@title ='Buyer Approval']";
     public static final String BUYERS_APPROVAL_HEADER_XPATH = "//div[text() ='Buyer Approval ']";
@@ -119,8 +118,6 @@ public class ElementLocators {
     public static final String CHECK_MANDATORY_ATTRIBUTE_BUTTON_XPATH = "//div[text() ='Check Mandatory Attributes']";
     public static final String SEASONALITY_TITLE_HEADER_XPATH = "//span[@title='Seasonality']";
     public static final String CORE_NEWNESS_XPATH="//th[@class='last-of-group-child'][1]";
-    //public static final String TEXT_XPATH=" //td[@class='cell-selected cell-selected-primary selected sheet-coll']";
-    //public static final String TEXT_XPATH="//textarea[@placeholder='Value or text']";
     public static final String textFieldLocator="(//tr[@class='even']/td[20])[1])));";
     public static final String Pricing_XPATH ="//span[@title='Pricing']";
     public static final String Cost_Price_XPATH ="(//span[text()='Cost Price'])[1]";

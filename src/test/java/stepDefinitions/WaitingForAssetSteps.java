@@ -7,7 +7,7 @@ import utils.ConfigFileReader;
 
 import java.io.IOException;
 
-public class WaitingForAssetStep extends BasePage {
+public class WaitingForAssetSteps extends BasePage {
 
     PdxMasterPage pdxMasterPage = new PdxMasterPage();
     PdxChannelPage pdxChannelPage = new PdxChannelPage();
